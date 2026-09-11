@@ -18,10 +18,34 @@
     [isaac.session.store.spi :as session-store]
     [isaac.step-tables :as match]
     [isaac.logger :as log]
+    [isaac.module.loader :as module-loader]
     [isaac.tool.memory :as memory]
+    [isaac.tool.registry :as tool-registry]
     [isaac.foundation.log-steps]))
 
 (helper! isaac.episodes.episode-steps)
+
+(defn- register-module-contributions! []
+  (nexus/-with-nexus {:fs (fs/real-fs)}
+    (module-loader/process-manifest-berths! (module-loader/builtin-index))))
+
+(g/before-scenario register-module-contributions!)
+
+(defonce ^:private register-tools-after-agent-reset?
+  (do
+    (alter-var-root #'isaac.tool.builtin/register-all!
+      (fn [register-agent-tools!]
+        (fn
+          ([]
+           (register-agent-tools!)
+           (doseq [tool-name ["recall__search" "recall__scene"]]
+             (let [tool-id (keyword (str/replace tool-name "__" "/"))
+                   entry   (get-in (module-loader/builtin-index)
+                                   [:isaac.episodes :manifest :isaac.agent/tools tool-id])]
+               (tool-registry/register-tool-entry! [tool-id entry]))))
+          ([allowed-tools]
+           (register-agent-tools! allowed-tools)))))
+    true))
 
 (defonce ^:private isaac-edn-ensures-root?
   (do
