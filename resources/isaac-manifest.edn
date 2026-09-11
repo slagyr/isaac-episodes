@@ -1,5 +1,6 @@
 {:id :isaac.episodes
  :version "0.1.0"
+ :builtin? true
  :factory isaac.episodes.module/create-module
 
  :isaac.server/service
