@@ -1,0 +1,15 @@
+{:paths ["src" "spec"]
+ :deps {io.github.slagyr/isaac-agent {:local/root "../isaac-agent" :exclusions [io.github.slagyr/isaac-foundation]}
+        speclj/speclj {:mvn/version "3.13.0"}
+        io.github.slagyr/gherclj {:git/tag "v1.4.0" :git/sha "85245b1"}
+        io.github.slagyr/isaac-foundation-spec {:git/url "https://github.com/slagyr/isaac-foundation.git"
+                                                :git/sha "e0dc789b58723a3415a12d5f0d95e0d9148bc316"
+                                                :deps/root "spec"}
+        io.github.slagyr/isaac-foundation-test-support {:git/url "https://github.com/slagyr/isaac-foundation.git"
+                                                        :git/sha "e0dc789b58723a3415a12d5f0d95e0d9148bc316"
+                                                        :deps/root "spec-support"}
+        io.github.slagyr/isaac-agent-spec {:local/root "../isaac-agent/spec"}}
+ :tasks
+ {spec {:task (shell "clojure" "-M:spec")}
+  features {:task (apply shell "clojure" "-M:features" *command-line-args*)}
+  ci {:task (do (run 'spec) (run 'features))}}}

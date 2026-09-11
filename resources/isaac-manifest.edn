@@ -1,0 +1,46 @@
+{:id :isaac.episodes
+ :version "0.1.0"
+ :factory isaac.episodes.module/create-module
+
+ :isaac/cli
+ {:embed {:usage "embed [options] [text ...]"
+          :summary "Embed text with the configured embedding provider"
+          :namespace isaac.recall.embedding.cli}
+  :episodes {:usage "episodes [subcommand] [options]"
+             :summary "Manage episodic memory (migrate sessions to scenes + gists)"
+             :namespace isaac.episodes.cli}
+  :recall {:usage "recall [options] <query>"
+           :summary "Rank a crew's indexed scenes against a query"
+           :namespace isaac.recall.cli}}
+
+ :isaac.agent/tools
+ {:recall/search {:factory isaac.episodes.tools/search-tool-factory}
+  :recall/scene {:factory isaac.episodes.tools/scene-tool-factory}}
+
+ :isaac.agent/session-policy
+ {:episodes {:factory isaac.session.policy.episodes/create}}
+
+ :isaac.config/check
+ {:embedding-provider {:fn isaac.episodes.config/check-embedding-provider}}
+
+ :isaac.config/schema
+ {:embedding {:schema {:name :embedding :type :map :description "Optional embedding capability"
+                      :schema {:source {:type :keyword :validations [[:one-of? :provider]]}
+                               :provider {:type :id :validations [[:present-when? :source :provider]]}
+                               :model {:type :string :validations [[:present-when? :source :provider]]}}}}
+  :episodes {:schema {:name :episodes :type :map :description "Episodic memory settings"
+                     :schema {:gist-model {:type :id}
+                              :ttl-minutes {:type :int}
+                              :seal {:type :map :schema {:size-cap {:type :int}
+                                                        :drift-threshold {:type :double}
+                                                        :min-tail {:type :int}
+                                                        :idle-minutes {:type :int}}}}}}
+  :recall {:schema {:name :recall :type :map :description "Recall scoring and injection settings"
+                   :schema {:half-life {:type :int}
+                            :floor-cos {:type :double}
+                            :weights {:type :map :schema {:text {:type :double}
+                                                         :gist {:type :double}
+                                                         :lex {:type :double}
+                                                         :recency {:type :double}}}
+                            :inject {:type :map :schema {:full {:type :int}
+                                                        :gists {:type :int}}}}}}}}
