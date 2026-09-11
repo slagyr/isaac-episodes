@@ -2,6 +2,9 @@
  :version "0.1.0"
  :factory isaac.episodes.module/create-module
 
+ :isaac.server/service
+ {:episodes {:namespace isaac.episodes.service}}
+
  :isaac/cli
  {:embed {:usage "embed [options] [text ...]"
           :summary "Embed text with the configured embedding provider"

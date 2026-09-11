@@ -1,11 +1,11 @@
 (ns isaac.episodes.worker
   "Idle-seal + TTL-close housekeeping on a shared-scheduler interval."
   (:require
+    [clojure.string :as str]
     [isaac.config.loader :as loader]
     [isaac.episodes.lifecycle :as lifecycle]
     [isaac.episodes.store :as store]
     [isaac.fs :as fs]
-    [clojure.string :as str]
     [isaac.nexus :as nexus]
     [isaac.scheduler.runtime :as scheduler]
     [isaac.session.store.spi :as session-store]
