@@ -1,6 +1,10 @@
 {:id :isaac.episodes
  :version "0.1.0"
+ :builtin? true
  :factory isaac.episodes.module/create-module
+
+ :isaac.server/service
+ {:episodes {:namespace isaac.episodes.service}}
 
  :isaac/cli
  {:embed {:usage "embed [options] [text ...]"

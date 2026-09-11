@@ -7,6 +7,7 @@
     [isaac.nexus :as nexus]
     [isaac.recall.inject :as recall-inject]
     [isaac.session.policy :as policy]
+    [isaac.session.policy.episodes :as episodes]
     [isaac.session.store.memory :as memory-store]
     [isaac.session.store.spi :as session-store]
     [speclj.core :refer :all]))
@@ -26,6 +27,7 @@
       (example)))
 
   (before
+    (policy/register-factory! :episodes #'episodes/create)
     (grover/install-test-fixture!)
     (grover/reset-queue!)
     (fs/mkdirs @mem @root)
