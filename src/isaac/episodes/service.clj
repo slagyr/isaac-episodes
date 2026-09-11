@@ -1,17 +1,19 @@
 (ns isaac.episodes.service
   (:require
-    [isaac.episodes.worker :as worker]
-    [isaac.service.factory :as factory]
-    [isaac.service.protocol :as service]))
+    [isaac.component.factory :as component-factory]
+    [isaac.component.protocol :as component]
+    [isaac.episodes.worker :as worker]))
 
-(deftype EpisodesService [handle*]
-  service/Service
-  (start [_]
-    (reset! handle* (worker/start! {})))
-  (stop [_]
+(deftype EpisodesComponent [handle*]
+  component/Component
+  (start [this]
+    (reset! handle* (worker/start! {}))
+    this)
+  (stop [this]
     (when-let [handle @handle*]
       (worker/stop! handle)
-      (reset! handle* nil))))
+      (reset! handle* nil))
+    this))
 
-(defmethod factory/create :episodes [_ _ctx]
-  (->EpisodesService (atom nil)))
+(defmethod component-factory/create :episodes [_ _ctx]
+  (->EpisodesComponent (atom nil)))

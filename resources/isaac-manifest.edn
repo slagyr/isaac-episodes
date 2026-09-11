@@ -3,7 +3,7 @@
  :builtin? true
  :factory isaac.episodes.module/create-module
 
- :isaac.server/service
+ :isaac/component
  {:episodes {:namespace isaac.episodes.service}}
 
  :isaac/cli
