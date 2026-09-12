@@ -1,6 +1,6 @@
 {:paths ["src" "resources"]
  :deps {io.github.slagyr/isaac-agent {:git/url "https://github.com/slagyr/isaac-agent.git"
-                                      :git/sha "e9cba6410e097992d99acbef3e31b22ef3153512"}
+                                      :git/sha "d0668ae506336a45675535750b324084a7735946"}
         io.github.slagyr/isaac-foundation {:git/url "https://github.com/slagyr/isaac-foundation.git"
                                            :git/sha "8b4a33bfff8d5ccae8aae5fff4193ea73ca42c5a"}
         io.github.slagyr/isaac-server {:git/url "https://github.com/slagyr/isaac-server.git"
@@ -13,7 +13,7 @@
                                                         :git/sha "8b4a33bfff8d5ccae8aae5fff4193ea73ca42c5a"
                                                         :deps/root "spec-support"}
         io.github.slagyr/isaac-agent-spec {:git/url "https://github.com/slagyr/isaac-agent.git"
-                                           :git/sha "e9cba6410e097992d99acbef3e31b22ef3153512"
+                                           :git/sha "d0668ae506336a45675535750b324084a7735946"
                                            :deps/root "spec"}}
  :aliases
  {:spec {:extra-paths ["spec"]

@@ -52,6 +52,26 @@
       (should (fs/exists? fs* (str root "/sessions/main/harbor-log/current.ednl")))
       (should-not (fs/exists? fs* (str root "/sessions/harbor-log/session.edn")))))
 
+  (it "merges a leftover flat session into its existing nested twin"
+    (let [fs* @mem
+          old-message "{:type \"message\" :id \"old\"}\n"
+          new-message "{:type \"message\" :id \"new\"}\n"]
+      (spit-edn fs* (str root "/sessions/engine-room/session.edn")
+                {:id "engine-room" :name "Engine Room" :crew "scrapper"})
+      (spit-text fs* (str root "/sessions/engine-room/0.ednl") old-message)
+      (spit-text fs* (str root "/sessions/engine-room/current.ednl") old-message)
+      (spit-edn fs* (str root "/sessions/scrapper/engine-room/session.edn")
+                {:id "engine-room" :name "Engine Room" :crew "scrapper" :session-policy :chronicle})
+      (spit-text fs* (str root "/sessions/scrapper/engine-room/current.ednl") new-message)
+      (should= 0 (sut/migrate-layout! {:fs fs* :root root}))
+      (should-not (fs/exists? fs* (str root "/sessions/engine-room/session.edn")))
+      (should-not (fs/exists? fs* (str root "/sessions/engine-room/current.ednl")))
+      (should= ["old" "old" "new"]
+               (->> ["0.ednl" "1.ednl" "current.ednl"]
+                    (map #(str root "/sessions/scrapper/engine-room/" %))
+                    (map #(read-string (str/trim (fs/slurp fs* %))))
+                    (mapv :id)))))
+
   (it "folds a leftover episode backing session into the nested session tree"
     (let [fs* @mem]
       (spit-edn fs* (str root "/sessions/2026-03-01-1000-ab12/session.edn")

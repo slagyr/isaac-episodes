@@ -25,7 +25,7 @@
     []))
 
 (defn- read-edn [fs* path]
-  (when (fs/exists? fs* path)
+  (when (fs/file? fs* path)
     (try
       (read-string (or (fs/slurp fs* path) "{}"))
       (catch Exception _ nil))))
@@ -44,7 +44,8 @@
            (keep (fn [name]
                    (let [sdir (str dir "/" name)
                          edn  (str sdir "/session.edn")]
-                     (when (fs/exists? fs* edn)
+                     (when (and (fs/exists? fs* edn)
+                                (fs/file? fs* edn))
                        (let [entry (keywordize (read-edn fs* edn))]
                          {:id   (or (:id entry) name)
                           :dir  sdir
@@ -99,7 +100,6 @@
                                leftover-e))
         chronicle   (->> leftover-s
                          (remove #(contains? episode-ids (:id %)))
-                         (remove #(already-nested? fs* root (:crew %) (:id %)))
                          (map (fn [s]
                                 {:kind       :chronicle
                                  :from       (str "sessions/" (:id s))
@@ -145,27 +145,44 @@
     (fs/mkdirs fs* (fs/parent dest))
     (fs/spit fs* dest (fs/slurp fs* src))))
 
+(defn- transcript-names [fs* dir]
+  (->> (list-names fs* dir)
+       (filter #(or (= "current.ednl" %) (re-matches #"\d+\.ednl" %)))
+       (sort-by #(if (= "current.ednl" %) Long/MAX_VALUE
+                                          (Long/parseLong (subs % 0 (- (count %) 5)))))
+       vec))
+
+(defn- next-segment [fs* dir]
+  (inc (reduce max -1
+               (keep (fn [name]
+                       (when (re-matches #"\d+\.ednl" name)
+                         (Long/parseLong (subs name 0 (- (count name) 5)))))
+                     (list-names fs* dir)))))
+
+(defn- merge-chronicle! [fs* src dest]
+  (let [names (transcript-names fs* src)
+        start (next-segment fs* dest)]
+    (doseq [[offset name] (map-indexed vector names)]
+      (copy-file! fs* (str src "/" name) (str dest "/" (+ start offset) ".ednl")))
+    (impl/delete-tree! fs* src)))
+
 (defn- move-chronicle! [fs* root item]
-  (let [crew (:crew item)
-        sid  (:session-id item)
-        dest (impl/session-dir root crew sid)
-        src  (:dir item)
-        entry (assoc (or (:entry item) {})
-                :id sid
-                :crew crew
-                :session-policy (or (:policy item) :chronicle))]
+  (let [crew   (:crew item)
+        sid    (:session-id item)
+        dest   (impl/session-dir root crew sid)
+        src    (:dir item)
+        nested (already-nested? fs* root crew sid)
+        entry  (assoc (or (:entry item) {})
+                 :id sid
+                 :crew crew
+                 :session-policy (or (:policy item) :chronicle))]
     (impl/mkdirs*! fs* dest)
-    (when (fs/exists? fs* (str src "/current.ednl"))
-      (impl/move-tree! fs* src dest)
-      ;; move-tree may have moved session.edn too; rewrite with stamp
+    (if nested
+      (merge-chronicle! fs* src dest)
+      (impl/move-tree! fs* src dest))
+    (when-not nested
       (impl/atomic-spit! fs* (impl/session-edn-path root crew sid)
                          (impl/write-edn entry)))
-    (when-not (fs/exists? fs* (impl/session-edn-path root crew sid))
-      (impl/atomic-spit! fs* (impl/session-edn-path root crew sid)
-                         (impl/write-edn entry))
-      (when (fs/exists? fs* (str src "/current.ednl"))
-        (copy-file! fs* (str src "/current.ednl") (str dest "/current.ednl")))
-      (impl/delete-tree! fs* src))
     (impl/upsert-index-row! fs* root sid {:crew crew :session-policy :chronicle
                                           :updated-at (:updated-at entry) :id sid})))
 

@@ -464,3 +464,35 @@ Feature: Episodes storage layout — one directory per session under sessions/<c
     And the isaac file "episodes/cordelia/index.edn" does not exist
     And the isaac file "episodes/cordelia/vectors.json" does not exist
 
+
+  Scenario: migrate-layout merges a leftover flat session into its existing crew twin
+    Given the isaac EDN file "sessions/engine-room/session.edn" exists with:
+      | path | value       |
+      | id   | engine-room |
+      | name | Engine Room |
+      | crew | scrapper    |
+    And the isaac file "sessions/engine-room/0.ednl" exists with:
+      """
+      {:type "message" :id "old-0" :message {:role "user" :content "Old zero"}}
+      """
+    And the isaac file "sessions/engine-room/current.ednl" exists with:
+      """
+      {:type "message" :id "old-current" :message {:role "assistant" :content "Old current"}}
+      """
+    And the isaac EDN file "sessions/scrapper/engine-room/session.edn" exists with:
+      | path           | value       |
+      | id             | engine-room |
+      | name           | Engine Room |
+      | crew           | scrapper    |
+      | session-policy | :chronicle   |
+    And the isaac file "sessions/scrapper/engine-room/current.ednl" exists with:
+      """
+      {:type "message" :id "new-current" :message {:role "user" :content "New current"}}
+      """
+    When isaac is run with "episodes migrate-layout"
+    Then the exit code is 0
+    And the isaac file "sessions/engine-room/session.edn" does not exist
+    And the isaac file "sessions/engine-room/current.ednl" does not exist
+    And the isaac file "sessions/scrapper/engine-room/0.ednl" exists
+    And the isaac file "sessions/scrapper/engine-room/1.ednl" exists
+    And the isaac file "sessions/scrapper/engine-room/current.ednl" exists
