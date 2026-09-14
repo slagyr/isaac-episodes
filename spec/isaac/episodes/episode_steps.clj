@@ -41,7 +41,7 @@
            (doseq [tool-name ["recall__search" "recall__scene"]]
              (let [tool-id (keyword (str/replace tool-name "__" "/"))
                    entry   (get-in (module-loader/builtin-index)
-                                   [:isaac.episodes :manifest :isaac.agent/tools tool-id])]
+                                   [:isaac.session.episodes :manifest :isaac.agent/tools tool-id])]
                (tool-registry/register-tool-entry! [tool-id entry]))))
           ([allowed-tools]
            (register-agent-tools! allowed-tools)))))
