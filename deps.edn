@@ -4,7 +4,7 @@
         io.github.slagyr/isaac-foundation {:git/url "https://github.com/slagyr/isaac-foundation.git"
                                            :git/sha "8b4a33bfff8d5ccae8aae5fff4193ea73ca42c5a"}
         io.github.slagyr/isaac-http {:git/url "https://github.com/slagyr/isaac-http.git"
-                                       :git/sha "d49972f561067f229283e7edee49ba798fff421c"}
+                                       :git/sha "11e43014ad5c7b9c8bb693e0eb4f673bbd23991d"}
         io.github.slagyr/gherclj {:git/tag "v1.4.0" :git/sha "85245b1"}
         io.github.slagyr/isaac-foundation-spec {:git/url "https://github.com/slagyr/isaac-foundation.git"
                                                 :git/sha "8b4a33bfff8d5ccae8aae5fff4193ea73ca42c5a"
