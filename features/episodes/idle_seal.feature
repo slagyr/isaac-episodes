@@ -153,3 +153,44 @@ Feature: Idle sealing — a quiet thread becomes recallable within minutes
     Then the log does not have entries matching:
       | event             | episode           |
       | :episodes/closing | 20260301100000000 |
+
+  @wip
+  Scenario: the worker logs one summary per tick (isaac-a0wp)
+    Given the current time is "2026-03-01T10:00:00"
+    And the following model responses are queued:
+      | type | content            | model |
+      | text | Charted, keep west | echo  |
+    When isaac is run with "prompt -m 'Chart the reef passage' --session reef-chat --crew cordelia"
+    When the episodes worker ticks at "2026-03-01T10:02:00"
+    Then the log has entries matching:
+      | level | event           | episodes-examined | sealed | closed | elapsed-ms |
+      | :info | :episodes/tick  | 1                 | 0      | 0      | #*         |
+
+  @wip
+  Scenario: an unchanged episode is not re-read on the next tick (isaac-a0wp)
+    Given the current time is "2026-03-01T10:00:00"
+    And the following model responses are queued:
+      | type | content                   | model |
+      | text | Charted, keep west        | echo  |
+      | text | 1-4: Reef passage charted | gist  |
+    When isaac is run with "prompt -m 'Chart the reef passage' --session reef-chat --crew cordelia"
+    And the episodes worker ticks at "2026-03-01T10:05:00"
+    And the episodes worker ticks at "2026-03-01T10:05:30"
+    Then the log has entries matching:
+      | level | event          | episodes-examined | transcript-reads |
+      | :info | :episodes/tick | 1                 | 0                |
+
+  @wip
+  Scenario: repeated seal failures report a streak instead of one warn per tick (isaac-a0wp)
+    Given the current time is "2026-03-01T10:00:00"
+    And the following model responses are queued:
+      | model | type       | status | content            | message                                           |
+      | echo  | text       |        | Charted, keep west |                                                   |
+      | gist  | http-error | 400    |                    | The 'gist' model is not supported on this account |
+      | gist  | http-error | 400    |                    | The 'gist' model is not supported on this account |
+    When isaac is run with "prompt -m 'Chart the reef passage' --session reef-chat --crew cordelia"
+    And the episodes worker ticks at "2026-03-01T10:05:00"
+    And the episodes worker ticks at "2026-03-01T10:05:30"
+    Then the log has entries matching:
+      | level | event                 | reason          | consecutive |
+      | :warn | :episodes/seal-failed | :provider-error | 2           |
