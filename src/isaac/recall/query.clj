@@ -50,7 +50,7 @@
       0.0)))
 
 (defn- configured-model [cfg]
-  (or (get-in cfg [:embedding :model]) ""))
+  (or (get-in cfg [:episodes :embedding :model]) ""))
 
 (defn- group-stale [rows model]
   (let [stale (remove #(= model (:model %)) rows)

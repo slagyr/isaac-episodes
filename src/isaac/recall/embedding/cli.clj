@@ -16,7 +16,7 @@
   (str/join "\n"
             ["Usage: isaac embed [options] [text ...]"
              ""
-             "Embed text with the configured embedding provider"
+             "Embed text with the configured embedding API"
              ""
              "Arguments:"
              "  text  Text to embed (one vector per argument)"
@@ -44,7 +44,7 @@
 
 (defn run
   "Embed each argument as one text. Prints one vector line per argument.
-   Exit 1 when :embedding is absent or the request fails."
+   Exit 1 when :episodes :embedding is absent or the request fails."
   [opts]
   (let [raw   (or (:_raw-args opts) [])
         {:keys [options arguments errors]} (tools-cli/parse-opts raw option-spec :in-order true)]

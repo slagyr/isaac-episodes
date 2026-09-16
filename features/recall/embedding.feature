@@ -13,7 +13,6 @@ Feature: Embedding Seam
 
   # ----- Help -----
 
-  @wip
   Scenario: embed is registered and has help
     When isaac is run with "help embed"
     Then the stdout matches:
@@ -26,7 +25,6 @@ Feature: Embedding Seam
 
   # ----- Optional capability -----
 
-  @wip
   Scenario: embedding unconfigured is a legal tier, not an error
     When isaac is run with "config validate"
     Then the exit code is 0
@@ -39,7 +37,6 @@ Feature: Embedding Seam
 
   # ----- Embedding API -----
 
-  @wip
   Scenario: grover embedding api embeds hello
     Given config file "isaac.edn" containing:
       """
@@ -51,7 +48,6 @@ Feature: Embedding Seam
       | \[5 532 104 111\] |
     And the exit code is 0
 
-  @wip
   Scenario: batch embed yields one vector per input text, in order
     Given config file "isaac.edn" containing:
       """
@@ -65,7 +61,6 @@ Feature: Embedding Seam
       | [8 777 104 101] |
     And the exit code is 0
 
-  @wip
   Scenario: ollama embedding api POSTs /api/embed
     Given config file "isaac.edn" containing:
       """
@@ -79,7 +74,6 @@ Feature: Embedding Seam
       | body.input | ["hello"]        |
     And the exit code is 0
 
-  @wip
   Scenario: embeddings api POSTs /embeddings with bearer
     Given config file "isaac.edn" containing:
       """
@@ -100,7 +94,6 @@ Feature: Embedding Seam
 
   # ----- Validation -----
 
-  @wip
   Scenario: config validation rejects an unknown embedding api
     Given config file "isaac.edn" containing:
       """

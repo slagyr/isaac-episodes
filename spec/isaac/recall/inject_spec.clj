@@ -21,7 +21,7 @@
    :text       "a light pinot noir suits roast pheasant"})
 
 (def ^:private embed-cfg
-  {:embedding {:source :provider :provider "grover" :model "mini-embed"}})
+  {:episodes {:embedding {:api "grover" :model "mini-embed"}}})
 
 (defn- write-closed! [fs* crew episode-id scenes]
   (store/write-episode!

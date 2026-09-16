@@ -1,11 +1,8 @@
 (ns isaac.recall.embedding.ollama
-  "Ollama Embedder adapter — POST {base-url}/api/embed with {model, input}.
-
-   Reuses isaac.llm.http so grover:ollama simulation and outbound request
-   capture share the chat provider path."
+  "Ollama embedding API — POST {base-url}/api/embed with {model, input}."
   (:require
     [isaac.llm.http :as llm-http]
-    [isaac.recall.embedding.protocol :as protocol]))
+    [isaac.recall.embedding.api :as api]))
 
 (def ^:private default-headers {"Content-Type" "application/json"})
 (def ^:private default-timeout 120000)
@@ -23,12 +20,11 @@
       []))
 
 (defn embed-request!
-  "POST /api/embed. `texts` is a sequential of strings (ollama batch shape).
-   Returns embedding vectors or throws ex-info on transport/API error."
-  [cfg model texts]
+  "POST /api/embed and return one vector per text."
+  [cfg texts]
   (let [base (or (:base-url cfg) default-base-url)
         url  (str base "/api/embed")
-        body {:model model
+        body {:model (:model cfg)
               :input (mapv str texts)}
         resp (llm-http/post-json! url default-headers body (http-opts cfg))]
     (if (:error resp)
@@ -36,13 +32,5 @@
                       (merge {:type :embedding/http-error} resp)))
       (->vectors resp))))
 
-(deftype OllamaEmbedder [provider-name cfg]
-  protocol/Embedder
-  (embed [_ texts]
-    (embed-request! cfg (or (:model cfg) "") texts)))
-
-(defn make
-  "Construct an Ollama-shaped Embedder. `cfg` should carry :base-url, :model,
-   and optionally :simulate-provider (grover path)."
-  [provider-name cfg]
-  (->OllamaEmbedder provider-name cfg))
+(defmethod api/embed :ollama [embedding-cfg texts]
+  (embed-request! embedding-cfg texts))

@@ -285,7 +285,7 @@ Feature: Episodes — live (policy + lifecycle)
       | session-policy | episodes         |
     And config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}}
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}}}
       """
     And crew "cordelia" has a closed episode "2026-03-01-1000-ab12" with scenes:
       | id                   | started-at          | ended-at            | gist                      | text                                    |
@@ -314,7 +314,7 @@ Feature: Episodes — live (policy + lifecycle)
       | session-policy | episodes         |
     And config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}}
        :recall {:floor-cos 0.999}}
       """
     And crew "cordelia" has a closed episode "2026-03-01-1000-ab12" with scenes:
@@ -344,8 +344,8 @@ Feature: Episodes — live (policy + lifecycle)
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}
-       :episodes {:gist-model :gist}}
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}
+                   :gist-model :gist}}
       """
     And the current time is "2026-03-01T10:00:00"
     And the following model responses are queued:
@@ -383,8 +383,8 @@ Feature: Episodes — live (policy + lifecycle)
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}
-       :episodes {:gist-model :gist}}
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}
+                   :gist-model :gist}}
       """
     And the following model responses are queued:
       | type | content                        | model |
@@ -428,8 +428,8 @@ Feature: Episodes — live (policy + lifecycle)
     And no index exists for crew "cordelia"
     Given config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}
-       :episodes {:gist-model :gist}}
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}
+                   :gist-model :gist}}
       """
     When isaac is run with "episodes index --crew cordelia"
     Then the stdout contains "2 new rows"
@@ -449,8 +449,8 @@ Feature: Episodes — live (policy + lifecycle)
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}
-       :episodes {:gist-model :gist
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}
+                  :gist-model :gist
                   :seal {:size-cap 4}}}
       """
     And the current time is "2026-03-01T10:00:00"
@@ -488,8 +488,8 @@ Feature: Episodes — live (policy + lifecycle)
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}
-       :episodes {:gist-model :gist
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}
+                  :gist-model :gist
                   :seal {:drift-threshold 0.999 :min-tail 2}}}
       """
     And the current time is "2026-03-01T10:00:00"
@@ -520,8 +520,8 @@ Feature: Episodes — live (policy + lifecycle)
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}
-       :episodes {:gist-model :gist
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}
+                  :gist-model :gist
                   :seal {:drift-threshold 0.999 :min-tail 2}}}
       """
     And the current time is "2026-03-01T10:00:00"
@@ -550,8 +550,8 @@ Feature: Episodes — live (policy + lifecycle)
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}
-       :episodes {:gist-model :gist
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}
+                  :gist-model :gist
                   :seal {:size-cap 8}}}
       """
     And the current time is "2026-03-01T10:00:00"

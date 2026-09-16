@@ -13,8 +13,8 @@ Feature: Episode provider attention
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:episodes  {:gist-model :gist}
-       :embedding {:source :provider :provider "grover" :model "mini-embed"}
+      {:episodes {:gist-model :gist
+                  :embedding {:api "grover" :model "mini-embed"}}
        :attention {:notify {:comm "discord" :target "boiler-room"}}}
       """
     And the current time is "2026-03-01T10:00:00"

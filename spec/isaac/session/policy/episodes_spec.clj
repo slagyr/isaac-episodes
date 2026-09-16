@@ -23,7 +23,7 @@
     (nexus/-with-nested-nexus {:fs            @mem
                                :sessions      {:store @ss}
                                :root          @root
-                               :config        (atom {:embedding {:source :provider :provider "grover" :model "mini-embed"}})}
+                               :config        (atom {:episodes {:embedding {:api "grover" :model "mini-embed"}}})}
       (example)))
 
   (before

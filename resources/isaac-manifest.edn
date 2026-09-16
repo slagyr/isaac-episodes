@@ -3,12 +3,20 @@
  :builtin? true
  :factory isaac.episodes.module/create-module
 
+ :berths
+ {:isaac.session.episodes/embedding-api
+  {:description "Episode embedding APIs dispatched by :episodes :embedding :api."
+   :schema {:type :map
+            :key-spec {:type :keyword}
+            :value-spec {:type :map
+                         :schema {:namespace {:type :symbol :validations [:present?]}}}}}}
+
  :isaac/component
  {:episodes {:namespace isaac.episodes.service}}
 
  :isaac/cli
  {:embed {:usage "embed [options] [text ...]"
-          :summary "Embed text with the configured embedding provider"
+          :summary "Embed text with the configured embedding API"
           :namespace isaac.recall.embedding.cli}
   :episodes {:usage "episodes [subcommand] [options]"
              :summary "Manage episodic memory (migrate sessions to scenes + gists)"
@@ -24,27 +32,34 @@
  :isaac.agent/session-policy
  {:episodes {:factory isaac.session.policy.episodes/create}}
 
- :isaac.config/check
- {:embedding-provider {:fn isaac.episodes.config/check-embedding-provider}}
+ :isaac.session.episodes/embedding-api
+ {:ollama {:namespace isaac.recall.embedding.ollama}
+  :embeddings {:namespace isaac.recall.embedding.embeddings}
+  :grover {:namespace isaac.recall.embedding}}
 
  :isaac.config/schema
- {:embedding {:schema {:name :embedding :type :map :description "Optional embedding capability"
-                      :schema {:source {:type :keyword :validations [[:one-of? :provider]]}
-                               :provider {:type :id :validations [[:present-when? :source :provider]]}
-                               :model {:type :string :validations [[:present-when? :source :provider]]}}}}
-  :episodes {:schema {:name :episodes :type :map :description "Episodic memory settings"
+ {:episodes {:schema {:name :episodes :type :map :description "Episodic memory settings"
                      :schema {:gist-model {:type :id}
                               :ttl-minutes {:type :int}
+                              :embedding {:type :map :description "Optional embedding capability"
+                                          :schema {:api {:type :id
+                                                         :validations [:present?
+                                                                       [:registered-in? :isaac.session.episodes/embedding-api]]}
+                                                   :model {:type :string :validations [:present?]}
+                                                   :base-url {:type :string}
+                                                   :api-key {:type :string}
+                                                   :timeout {:type :int}
+                                                   :simulate-provider {:type :string}}}
                               :seal {:type :map :schema {:size-cap {:type :int}
                                                         :drift-threshold {:type :double}
                                                         :min-tail {:type :int}
                                                         :idle-minutes {:type :int}}}}}}
   :recall {:schema {:name :recall :type :map :description "Recall scoring and injection settings"
-                   :schema {:half-life {:type :int}
-                            :floor-cos {:type :double}
-                            :weights {:type :map :schema {:text {:type :double}
-                                                         :gist {:type :double}
-                                                         :lex {:type :double}
-                                                         :recency {:type :double}}}
-                            :inject {:type :map :schema {:full {:type :int}
-                                                        :gists {:type :int}}}}}}}}
+                    :schema {:half-life {:type :int}
+                             :floor-cos {:type :double}
+                             :weights {:type :map :schema {:text {:type :double}
+                                                          :gist {:type :double}
+                                                          :lex {:type :double}
+                                                          :recency {:type :double}}}
+                             :inject {:type :map :schema {:full {:type :int}
+                                                         :gists {:type :int}}}}}}}}

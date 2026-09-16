@@ -5,8 +5,8 @@
     [isaac.llm.http :as llm-http]
     [isaac.recall.embedding :as sut]
     [isaac.recall.embedding.cli :as cli]
-    [isaac.recall.embedding.ollama :as ollama]
-    [isaac.recall.embedding.protocol :as protocol]
+    [isaac.recall.embedding.embeddings]
+    [isaac.recall.embedding.ollama]
     [isaac.recall.score :as score]
     [speclj.core :refer :all]))
 
@@ -34,46 +34,55 @@
         (should (< sim 0.999))))
     )
 
-  (context "GroverEmbedder"
-    (it "embeds a batch in order"
-      (let [e (sut/make-grover "mini-embed")]
-        (should= [[5 532 104 111] [3 312 99 116]]
-                 (protocol/embed e ["hello" "cat"]))))
-    )
+  (context "embedding api"
+    (it "dispatches grover batches in order"
+      (should= [[5 532 104 111] [3 312 99 116]]
+               (sut/embed {:api "grover" :model "mini-embed"} ["hello" "cat"])))
 
-  (context "resolve-embedder"
-    (it "returns nil when :embedding is absent"
-      (should-be-nil (sut/resolve-embedder {})))
-
-    (it "returns a grover embedder for provider grover"
-      (let [e (sut/resolve-embedder {:embedding {:source :provider
-                                                 :provider "grover"
-                                                 :model "mini-embed"}})]
-        (should-not-be-nil e)
-        (should= [[5 532 104 111]] (protocol/embed e ["hello"]))))
-
-    (it "embed-texts reports no-embedding when unconfigured"
+    (it "reports no-embedding when episodes.embedding is unconfigured"
       (let [r (sut/embed-texts {} ["hello"])]
         (should= :no-embedding (:error r))
-        (should (re-find #":embedding" (:message r)))))
+        (should (re-find #":episodes.*:embedding" (:message r)))))
+
+    (it "rejects unknown apis instead of falling through to ollama"
+      (should-throw Exception #"unknown embedding api: warp-drive"
+        (sut/embed {:api "warp-drive" :model "mini-embed"} ["hello"])))
     )
 
-  (context "ollama adapter via grover simulation"
+  (context "ollama api via grover simulation"
     (before (grover/clear-provider-requests!)
             (llm-http/clear-outbound-requests!))
 
     (it "POSTs /api/embed and returns grover vectors under simulation"
-      (let [e (ollama/make "grover:ollama"
-                           {:base-url "http://localhost:11434"
-                            :model "nomic-embed-text"
-                            :simulate-provider "ollama"
-                            :api-key "grover"})
-            vectors (protocol/embed e ["hello"])]
+      (let [vectors (sut/embed {:api "ollama"
+                                :base-url "http://localhost:11434"
+                                :model "nomic-embed-text"
+                                :simulate-provider "ollama"}
+                              ["hello"])
+            req     (grover/last-provider-request)]
         (should= [[5 532 104 111]] vectors)
-        (let [req (grover/last-provider-request)]
-          (should (str/ends-with? (:url req) "/api/embed"))
-          (should= "nomic-embed-text" (get-in req [:body :model]))
-          (should= ["hello"] (get-in req [:body :input])))))
+        (should (str/ends-with? (:url req) "/api/embed"))
+        (should= "nomic-embed-text" (get-in req [:body :model]))
+        (should= ["hello"] (get-in req [:body :input]))))
+    )
+
+  (context "embeddings api via grover simulation"
+    (before (grover/clear-provider-requests!)
+            (llm-http/clear-outbound-requests!))
+
+    (it "POSTs /embeddings with bearer auth and returns data vectors"
+      (let [vectors (sut/embed {:api "embeddings"
+                                :base-url "https://api.openai.com/v1"
+                                :api-key "sk-harbor-test"
+                                :model "text-embedding-3-large"
+                                :simulate-provider "openai"}
+                              ["hello"])
+            req     (grover/last-provider-request)]
+        (should (vector? vectors))
+        (should (str/ends-with? (:url req) "/embeddings"))
+        (should= "Bearer sk-harbor-test" (get-in req [:headers "Authorization"]))
+        (should= "text-embedding-3-large" (get-in req [:body :model]))
+        (should= ["hello"] (get-in req [:body :input]))))
     )
 
   (context "cli vector formatting"

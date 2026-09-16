@@ -154,7 +154,7 @@
                                               :thread "supper-chat" :scene-ids []} [])
           provider (llm-provider/make-provider "grover" {:api "grover" :auth "none"})
           _ (grover/enqueue! [{:type "text" :content "1-2: Wine pairing for pheasant"}])
-          cfg {:embedding {:source :provider :provider "grover" :model "mini-embed"}}
+          cfg {:episodes {:embedding {:api "grover" :model "mini-embed"}}}
           result (sut/close-episode! {:fs @mem :root @root :crew "cordelia"
                                       :episode-id (:id session)
                                       :session-store @ss
@@ -171,7 +171,7 @@
                                               :thread "reef-chat" :scene-ids []} [])
           provider (llm-provider/make-provider "grover" {:api "grover" :auth "none"})
           _ (grover/enqueue! [{:type "text" :content "1-2: Reef charting"}])
-          cfg {:embedding {:source :provider :provider "grover" :model "mini-embed"}}]
+          cfg {:episodes {:embedding {:api "grover" :model "mini-embed"}}}]
       (with-redefs [isaac.recall.index/index-crew! (fn [& _] (throw (ex-info "nightbird down" {})))]
         (let [result (sut/close-episode! {:fs @mem :root @root :crew "cordelia"
                                           :episode-id (:id session)
@@ -474,8 +474,8 @@
     (it "absorbs a single-scene segmentation as a no-op when only drift fired"
       (let [session  (seed-open-episode! @ss @mem @root 1)
             provider (llm-provider/make-provider "grover" {:api "grover" :auth "none"})
-            embed-cfg {:embedding {:source :provider :provider "grover" :model "mini-embed"}
-                       :episodes  {:gist-model :gist
+            embed-cfg {:episodes {:embedding {:api "grover" :model "mini-embed"}
+                                   :gist-model :gist
                                    :seal {:drift-threshold 0.999 :min-tail 2}}}
             calls    (atom 0)]
         (with-redefs [embedding/embed-texts
@@ -506,8 +506,8 @@
     (it "seals under the size cap when the new exchange drifts from the rolling vector"
       (let [session  (seed-open-episode! @ss @mem @root 1)
             provider (llm-provider/make-provider "grover" {:api "grover" :auth "none"})
-            embed-cfg {:embedding {:source :provider :provider "grover" :model "mini-embed"}
-                       :episodes  {:gist-model :gist
+            embed-cfg {:episodes {:embedding {:api "grover" :model "mini-embed"}
+                                   :gist-model :gist
                                    :seal {:drift-threshold 0.999 :min-tail 2}}}
             calls    (atom 0)]
         (with-redefs [embedding/embed-texts
@@ -560,8 +560,8 @@
                                        :episode-id (:id session)
                                        :session-store @ss
                                        :provider provider :model "gist"
-                                       :cfg {:embedding {:source :provider :provider "grover" :model "mini-embed"}
-                                             :episodes {:gist-model :gist :seal {:size-cap 4}}}})]
+                                       :cfg {:episodes {:embedding {:api "grover" :model "mini-embed"}
+                                                        :gist-model :gist :seal {:size-cap 4}}}})]
         (should= :sealed (:status result))
         (should (>= (or (:indexed result) 0) 1))))
 
@@ -586,8 +586,8 @@
             _       (sut/maybe-seal! {:fs @mem :root @root :crew "cordelia"
                                       :episode-id (:id session)
                                       :session-store @ss
-                                      :cfg {:embedding {:source :provider :provider "grover" :model "mini-embed"}
-                                            :episodes {:seal {:size-cap 80 :min-tail 2}}}})
+                                      :cfg {:episodes {:embedding {:api "grover" :model "mini-embed"}
+                                                       :seal {:size-cap 80 :min-tail 2}}}})
             ep      (store/read-episode @mem @root "cordelia" (:id session))]
         (should (seq (:open-scene-vector ep)))
         (should= 1 (:open-scene-vector-n ep))
@@ -601,8 +601,8 @@
                                        :episode-id (:id session)
                                        :session-store @ss
                                        :provider provider :model "gist"
-                                       :cfg {:embedding {:source :provider :provider "grover" :model "mini-embed"}
-                                             :episodes {:gist-model :gist :seal {:size-cap 4}}}})
+                                       :cfg {:episodes {:embedding {:api "grover" :model "mini-embed"}
+                                                        :gist-model :gist :seal {:size-cap 4}}}})
             ep       (store/read-episode @mem @root "cordelia" (:id session))]
         (should-not (contains? ep :open-scene-vector))
         (should-not (contains? ep :open-scene-vector-n))))
@@ -630,8 +630,10 @@
                      (seed-open-episode! @ss @mem @root 1))
           provider (llm-provider/make-provider "grover" {:api "grover" :auth "none"})
           cfg      {:crew     {"cordelia" {:session-policy :episodes :model "echo" :soul "You are Cordelia"}}
-                    :episodes {:gist-model :gist :seal {:idle-minutes 3} :ttl-minutes 60}
-                    :embedding {:source :provider :provider "grover" :model "mini-embed"}}]
+                    :episodes {:gist-model :gist
+                               :seal {:idle-minutes 3}
+                               :ttl-minutes 60
+                               :embedding {:api "grover" :model "mini-embed"}}}]
       (grover/enqueue! [{:type "text" :content "1-2: Wine pairing for pheasant"}])
       (binding [memory/*now* (java.time.Instant/parse "2026-03-01T10:10:00Z")]
         (worker/tick! {:now (java.time.Instant/parse "2026-03-01T10:10:00Z")
@@ -674,8 +676,10 @@
     (let [session  (seed-open-episode! @ss @mem @root 1)
           provider (llm-provider/make-provider "grover" {:api "grover" :auth "none"})
           cfg      {:crew     {"cordelia" {:session-policy :episodes :model "echo" :soul "You are Cordelia"}}
-                    :episodes {:gist-model :gist :seal {:idle-minutes 3} :ttl-minutes 60}
-                    :embedding {:source :provider :provider "grover" :model "mini-embed"}}]
+                    :episodes {:gist-model :gist
+                               :seal {:idle-minutes 3}
+                               :ttl-minutes 60
+                               :embedding {:api "grover" :model "mini-embed"}}}]
       (grover/enqueue! [{:type "text" :content "1-2: Wine pairing for pheasant"}])
       (session-store/mark-in-flight! @ss (:id session))
       (binding [memory/*now* (java.time.Instant/parse "2026-03-01T10:10:00Z")]

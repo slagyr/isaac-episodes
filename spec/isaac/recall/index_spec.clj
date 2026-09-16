@@ -60,7 +60,7 @@
 
   (context "index-crew!"
     (it "embeds gist and text for each sealed scene"
-      (let [cfg {:embedding {:source :provider :provider "grover" :model "mini-embed"}}]
+      (let [cfg {:episodes {:embedding {:api "grover" :model "mini-embed"}}}]
         (write-closed! @mem "cordelia" "2026-03-01-1000-ab12"
                        [{:id "2026-03-01-1000-s1x1"
                          :started-at "2026-03-01T10:00:00"
@@ -77,7 +77,7 @@
           (should= (norm "pinot") (vec (:vector (second rows)))))))
 
     (it "is idempotent by (scene-id, kind, model)"
-      (let [cfg {:embedding {:source :provider :provider "grover" :model "mini-embed"}}]
+      (let [cfg {:episodes {:embedding {:api "grover" :model "mini-embed"}}}]
         (write-closed! @mem "cordelia" "ep1"
                        [{:id "s1" :gist "wine" :text "pinot"
                          :started-at "2026-03-01T10:00:00"
@@ -86,7 +86,7 @@
         (should= 0 (:new (sut/index-crew! @mem root "cordelia" cfg {})))))
 
     (it "rebuild drops existing rows and re-embeds"
-      (let [cfg {:embedding {:source :provider :provider "grover" :model "mini-embed"}}]
+      (let [cfg {:episodes {:embedding {:api "grover" :model "mini-embed"}}}]
         (write-closed! @mem "cordelia" "ep1"
                        [{:id "s1" :gist "wine" :text "pinot"
                          :started-at "2026-03-01T10:00:00"
@@ -115,16 +115,16 @@
                        :started-at "2026-03-01T10:00:00"
                        :ended-at "2026-03-01T10:05:00"}])
       (sut/index-crew! @mem root "cordelia"
-                       {:embedding {:source :provider :provider "grover" :model "mini-embed"}}
+                       {:episodes {:embedding {:api "grover" :model "mini-embed"}}}
                        {})
       (let [result (sut/index-crew! @mem root "cordelia"
-                                    {:embedding {:source :provider :provider "grover" :model "maxi-embed"}}
+                                    {:episodes {:embedding {:api "grover" :model "maxi-embed"}}}
                                     {})]
         (should= 2 (:new result))
         (should= 4 (count (sut/read-index @mem root "cordelia")))))
 
     (it "skips routine scenes and reports the skip count"
-      (let [cfg {:embedding {:source :provider :provider "grover" :model "mini-embed"}}]
+      (let [cfg {:episodes {:embedding {:api "grover" :model "mini-embed"}}}]
         (write-closed! @mem "cordelia" "ep1"
                        [{:id "s1" :gist "wine" :text "pinot"
                          :started-at "2026-03-01T10:00:00"
@@ -141,7 +141,7 @@
 
   (context "embed batching"
     (it "embeds in bounded batches so corpus-scale runs cannot time out one request"
-      (let [cfg {:embedding {:source :provider :provider "grover" :model "mini-embed"}}
+      (let [cfg {:episodes {:embedding {:api "grover" :model "mini-embed"}}}
             batch-sizes (atom [])
             real-embed embedding/embed-texts
             scenes (mapv (fn [i]

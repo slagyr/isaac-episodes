@@ -33,7 +33,7 @@ Feature: Episodes — index
     Scenario: indexing a crew embeds gist and text rows per scene
     Given config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}}
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}}}
       """
     And crew "cordelia" has a closed episode "2026-03-01-1000-ab12" with scenes:
       | id                   | started-at          | ended-at            | gist | text  |
@@ -54,7 +54,7 @@ Feature: Episodes — index
     Scenario: re-run adds nothing; --rebuild re-embeds from current scene files
     Given config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}}
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}}}
       """
     And crew "cordelia" has a closed episode "2026-03-01-1000-ab12" with scenes:
       | id                   | started-at          | ended-at            | gist | text  |
@@ -99,7 +99,7 @@ Feature: Episodes — index
     Scenario: switching embedding model embeds anew and keeps old rows
     Given config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}}
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}}}
       """
     And crew "cordelia" has a closed episode "2026-03-01-1000-ab12" with scenes:
       | id                   | started-at          | ended-at            | gist | text  |
@@ -108,7 +108,7 @@ Feature: Episodes — index
     Then the stdout contains "2 new rows"
     Given config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "maxi-embed"}}
+      {:episodes {:embedding {:api "grover" :model "maxi-embed"}}}
       """
     When isaac is run with "episodes index --crew cordelia"
     Then the stdout contains "2 new rows"
@@ -125,7 +125,7 @@ Feature: Episodes — index
     Scenario: routine scenes earn no index rows
     Given config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}}
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}}}
       """
     And crew "cordelia" has a closed episode "2026-03-01-1000-ab12" with scenes:
       | id                   | started-at          | ended-at            | gist  | text  | routine |

@@ -20,7 +20,7 @@
     scenes))
 
 (def ^:private cfg
-  {:embedding {:source :provider :provider "grover" :model "mini-embed"}})
+  {:episodes {:embedding {:api "grover" :model "mini-embed"}}})
 
 (describe "isaac.recall.query"
 
@@ -50,7 +50,7 @@
                      :ended-at "2026-03-01T10:05:00"}])
     (index/index-crew! @mem root "cordelia" cfg {})
     (let [r (sut/query @mem root "cordelia" "wine"
-                       {:embedding {:source :provider :provider "grover" :model "maxi-embed"}}
+                       {:episodes {:embedding {:api "grover" :model "maxi-embed"}}}
                        {})]
       (should= :no-rows (:error r))
       (should (re-find #"no rows for model maxi-embed" (:message r)))))
@@ -62,10 +62,10 @@
                      :ended-at "2026-03-01T10:05:00"}])
     (index/index-crew! @mem root "cordelia" cfg {})
     (index/index-crew! @mem root "cordelia"
-                       {:embedding {:source :provider :provider "grover" :model "maxi-embed"}}
+                       {:episodes {:embedding {:api "grover" :model "maxi-embed"}}}
                        {})
     (let [r (sut/query @mem root "cordelia" "wine"
-                       {:embedding {:source :provider :provider "grover" :model "maxi-embed"}}
+                       {:episodes {:embedding {:api "grover" :model "maxi-embed"}}}
                        {})]
       (should-be-nil (:error r))
       (should (re-find #"2 stale rows \(mini-embed\)" (:warning r)))
@@ -163,7 +163,7 @@
                      :started-at "2026-03-01T10:00:00" :ended-at "2026-03-01T10:05:00"}])
     (index/index-crew! @mem root "cordelia" cfg {})
     (let [r (sut/query @mem root "cordelia" "wine"
-                       {:embedding {:source :provider :provider "grover" :model "maxi-embed"}}
+                       {:episodes {:embedding {:api "grover" :model "maxi-embed"}}}
                        {})]
       (should= :no-rows (:error r))))
 

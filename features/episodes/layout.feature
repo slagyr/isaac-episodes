@@ -217,7 +217,7 @@ Feature: Episodes storage layout — one directory per session under sessions/<c
   Scenario: the recall index locates a scene by session id, episode id, and scene id
     Given config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}}
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}}}
       """
     And the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path           | value            |
@@ -246,7 +246,7 @@ Feature: Episodes storage layout — one directory per session under sessions/<c
   Scenario: migrate-layout moves every session under its crew, folds a legacy episode into its session, rebuilds both indexes, and is a no-op the second time
     Given config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}}
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}}}
       """
     And the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path           | value            |

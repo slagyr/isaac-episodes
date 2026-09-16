@@ -87,7 +87,7 @@
   [(:scene-id row) (:kind row) (:model row)])
 
 (defn- configured-model [cfg]
-  (get-in cfg [:embedding :model]))
+  (get-in cfg [:episodes :embedding :model]))
 
 (defn- scene-payloads [scene]
   [{:kind :gist :text (or (:gist scene) "")}

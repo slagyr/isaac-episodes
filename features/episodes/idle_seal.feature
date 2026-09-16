@@ -23,8 +23,8 @@ Feature: Idle sealing — a quiet thread becomes recallable within minutes
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:episodes  {:gist-model :gist}
-       :embedding {:source :provider :provider "grover" :model "mini-embed"}}
+      {:episodes {:gist-model :gist
+                  :embedding {:api "grover" :model "mini-embed"}}}
       """
 
   Scenario: an idle thread seals its tail on the tick and stays open

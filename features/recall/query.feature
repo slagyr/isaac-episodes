@@ -38,7 +38,7 @@ Feature: Recall — query
     Scenario: ranked hits with per-channel score breakdown
     Given config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}}
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}}}
       """
     And crew "cordelia" has a closed episode "2026-03-01-1000-ab12" with scenes:
       | id                   | started-at          | ended-at            | gist | text |
@@ -65,7 +65,7 @@ Feature: Recall — query
     Scenario: exact identifiers surface via the lexical channel with embeddings zeroed
     Given config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}}
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}}}
       """
     And crew "cordelia" has a closed episode "2026-03-01-1000-ab12" with scenes:
       | id                   | started-at          | ended-at            | gist                       | text                                         |
@@ -85,7 +85,7 @@ Feature: Recall — query
     Given the current time is "2026-03-10T12:00:00"
     And config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}}
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}}}
       """
     And crew "cordelia" has a closed episode "2026-01-10-1000-ab12" with scenes:
       | id                   | started-at          | ended-at            | gist   | text   |
@@ -98,7 +98,7 @@ Feature: Recall — query
       | 1\. 2026-01-10-1000-s1x1 |
     Given config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}}
        :recall {:weights {:recency 8}}}
       """
     When isaac is run with "recall harbor --crew cordelia"
@@ -117,7 +117,7 @@ Feature: Recall — query
     Given the current time is "2026-03-10T12:00:00"
     And config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}}
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}}}
       """
     And crew "cordelia" has a closed episode "2026-01-10-1000-ab12" with scenes:
       | id                   | started-at          | ended-at            | gist | text |
@@ -146,7 +146,7 @@ Feature: Recall — query
     Scenario: missing index and model drift fail loudly; mixed rows warn
     Given config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}}
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}}}
       """
     And crew "cordelia" has a closed episode "2026-03-01-1000-ab12" with scenes:
       | id                   | started-at          | ended-at            | gist | text  |
@@ -159,7 +159,7 @@ Feature: Recall — query
     When isaac is run with "episodes index --crew cordelia"
     Given config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "maxi-embed"}}
+      {:episodes {:embedding {:api "grover" :model "maxi-embed"}}}
       """
     When isaac is run with "recall wine --crew cordelia"
     Then the stderr contains "no rows for model maxi-embed"
@@ -179,7 +179,7 @@ Feature: Recall — query
     Scenario: rare terms outweigh common terms in the lexical channel
     Given config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}}
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}}}
       """
     And crew "cordelia" has a closed episode "2026-03-01-1000-ab12" with scenes:
       | id                   | started-at          | ended-at            | gist                | text                                                   |
@@ -198,7 +198,7 @@ Feature: Recall — query
     Scenario: unknown query terms dilute the lexical score honestly
     Given config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}}
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}}}
       """
     And crew "cordelia" has a closed episode "2026-03-01-1000-ab12" with scenes:
       | id                   | started-at          | ended-at            | gist                | text                                      |
@@ -218,7 +218,7 @@ Feature: Recall — query
     Scenario: junk queries warn that nothing stands out; real matches stay silent
     Given config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}}
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}}}
       """
     And crew "cordelia" has a closed episode "2026-03-01-1000-ab12" with scenes:
       | id                   | started-at          | ended-at            | gist                | text                                 |
@@ -244,7 +244,7 @@ Feature: Recall — query
     Scenario: floor resolves defaults, then :recall config, then CLI flag; 0 disables
     Given config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}}
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}}}
       """
     And crew "cordelia" has a closed episode "2026-03-01-1000-ab12" with scenes:
       | id                   | started-at          | ended-at            | gist                | text                                |
@@ -255,7 +255,7 @@ Feature: Recall — query
     Then the stderr does not contain "weak matches"
     Given config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}}
        :recall {:floor-cos 0.999}}
       """
     When isaac is run with "recall grog --crew cordelia"
@@ -269,7 +269,7 @@ Feature: Recall — query
     Scenario: routine scenes surface via exact terms only
     Given config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}}
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}}}
       """
     And crew "cordelia" has a closed episode "2026-03-01-1000-ab12" with scenes:
       | id                   | started-at          | ended-at            | gist                      | text                                           | routine |
@@ -291,7 +291,7 @@ Feature: Recall — query
     Scenario: zero-signal scenes never rank; a rowless index still serves lex
     Given config file "isaac.edn" containing:
       """
-      {:embedding {:source :provider :provider "grover" :model "mini-embed"}}
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}}}
       """
     And crew "cordelia" has a closed episode "2026-03-01-1000-ab12" with scenes:
       | id                   | started-at          | ended-at            | gist           | text                       | routine |
