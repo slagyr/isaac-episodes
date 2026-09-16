@@ -211,7 +211,7 @@
   "Seal an open episode via the migrate/segment pipeline. Preserves :thread
    and :parent-episode on the closed record. Indexes sealed scenes when
    embedding is configured (isaac-h5dk)."
-  [{:keys [fs root crew episode-id session-store provider model cfg]}]
+  [{:keys [fs root crew episode-id session-store provider model cfg transcript]}]
   (let [fs*     (runtime-fs fs)
         root    (runtime-root root)
         ss      (runtime-store session-store)
@@ -219,7 +219,7 @@
         existing (store/read-episode fs* root crew episode-id)
         backing  (backing-session-id ss existing)
         session  (when ss (session-store/get-session ss backing))
-        transcript (transcript-for ss fs* root existing)
+        transcript (or transcript (transcript-for ss fs* root existing))
         {:keys [provider model]} (gist-provider+model (or cfg {}) root provider model)]
     (cond
       (nil? existing)
@@ -427,12 +427,17 @@
         (and indexed (pos? (or (:new indexed) 0)))
         (assoc :indexed (:new indexed))))))
 
+(defn- warn-seal-failed! [warn? episode-id fields]
+  (when warn?
+    (log/log :warn :episodes/seal-failed (assoc fields :episode episode-id))))
+
 (defn maybe-seal!
   "Live seal. Order: update rolling open-scene vector → check
    idle/drift/cap triggers → segment tail → seal (idle/hard-cap
    single-scene seals the whole tail; otherwise leave-open 1) → index → reset vector.
    Failure is loud-logged and leaves the turn / episode unharmed."
-  [{:keys [fs root crew episode-id session-store provider model cfg trigger]}]
+  [{:keys [fs root crew episode-id session-store provider model cfg trigger transcript warn-on-failure?]
+    :or   {warn-on-failure? true}}]
   (let [fs*  (runtime-fs fs)
         root (runtime-root root)
         ss   (runtime-store session-store)
@@ -450,7 +455,8 @@
       :else
       (try
         (let [{:keys [size-cap drift-threshold min-tail idle-minutes]} (seal-knobs cfg)
-              transcript (session-store/chronicle-transcript ss (backing-session-id ss existing))
+              transcript (or transcript
+                             (session-store/chronicle-transcript ss (backing-session-id ss existing)))
               sealed     (vec (remove nil? (store/list-scenes fs* root crew episode-id)))
               tail       (tail-after-sealed (message-entries transcript) sealed)
               n          (count tail)
@@ -487,17 +493,17 @@
               (if-not provider
                 (do
                   (when new-mean (persist-vector! fs* root existing new-mean))
-                  (log/warn :episodes/seal-failed :episode episode-id :reason :no-provider)
+                  (warn-seal-failed! warn-on-failure? episode-id {:reason :no-provider})
                   {:status :skipped :reason :no-provider})
                 (let [distilled (mapv distill/distill-entry tail)
                       result    (segment/segment-span! provider model distilled nil)]
                   (if-not (:ok result)
                     (do
                       (when new-mean (persist-vector! fs* root existing new-mean))
-                      (log/warn :episodes/seal-failed :episode episode-id
-                                :reason (or (:error result) :bad-parse)
-                                :raw (:raw result))
-                      {:status :error :reason (:error result)})
+                      (warn-seal-failed! warn-on-failure? episode-id
+                                         {:reason (or (:error result) :bad-parse)
+                                          :raw    (:raw result)})
+                      {:status :error :reason (or (:error result) :bad-parse) :raw (:raw result)})
                     (let [resolved   (:ok result)
                           leave-open (if (or (= :idle trigger)
                                              (and (= :size-cap trigger)
@@ -513,8 +519,8 @@
                         (commit-live-seal! fs* root crew cfg episode* sealed
                                            new-scenes trigger)))))))))
         (catch Exception e
-          (log/warn :episodes/seal-failed :episode episode-id
-                    :reason :exception :error (.getMessage e))
+          (warn-seal-failed! warn-on-failure? episode-id
+                             {:reason :exception :error (.getMessage e)})
           {:status :error :reason :exception :message (.getMessage e)})))))
 
 (defn maybe-close-if-cold!
@@ -522,7 +528,7 @@
    still-warm episodes. Empty transcripts (no messages) are deleted, not closed.
    Logs :episodes/closing before the attempt; :closed / :deleted only after
    success; :close-failed with the error on failure."
-  [{:keys [fs root crew episode-id session-store provider model cfg]}]
+  [{:keys [fs root crew episode-id session-store provider model cfg transcript]}]
   (let [fs*      (runtime-fs fs)
         root     (runtime-root root)
         ss       (runtime-store session-store)
@@ -537,7 +543,7 @@
       {:status :skipped :reason :in-flight}
 
       :else
-      (let [transcript (transcript-for ss fs* root existing)
+      (let [transcript (or transcript (transcript-for ss fs* root existing))
             ttl        (ttl-minutes cfg)]
         (if (warm? transcript ttl)
           {:status :skipped :reason :warm}
@@ -548,7 +554,7 @@
                 (delete-empty-episode! fs* root crew episode-id ss)
                 (let [closed (close-episode! {:fs fs* :root root :crew crew
                                               :episode-id episode-id
-                                              :session-store ss
+                                              :session-store ss :transcript transcript
                                               :provider provider :model model :cfg cfg})]
                   (if (succeeded-close? closed)
                     (do

@@ -6,14 +6,22 @@
     [isaac.episodes.lifecycle :as lifecycle]
     [isaac.episodes.store :as store]
     [isaac.fs :as fs]
+    [isaac.logger :as log]
     [isaac.nexus :as nexus]
     [isaac.scheduler.runtime :as scheduler]
+    [isaac.session.store.impl-common :as impl-common]
     [isaac.session.store.spi :as session-store]
     [isaac.tool.memory :as memory]))
 
 (def default-tick-ms 30000)
 
 (def ^:private ticking? (atom false))
+(defonce ^:private transcript-cache (atom {}))
+(defonce ^:private seal-failure-streaks (atom {}))
+
+(defn -reset-state! []
+  (reset! transcript-cache {})
+  (reset! seal-failure-streaks {}))
 
 (defn- runtime-fs [fs*]
   (or fs* (nexus/get :fs) (fs/instance)))
@@ -50,13 +58,65 @@
         from-disk (list-crew-names fs* root)]
     (vec (distinct (concat from-cfg from-disk)))))
 
+(defn- backing-session-id [ss ep]
+  (or (when (and ss (:id ep) (session-store/get-session ss (:id ep))) (:id ep))
+      (when (and ss (:session-id ep) (session-store/get-session ss (:session-id ep))) (:session-id ep))
+      (:id ep)
+      (:session-id ep)))
+
+(defn- transcript-path [fs* root session-id]
+  (let [loc (impl-common/locate-session root session-id fs*)]
+    (str (or (:dir loc) (impl-common/session-dir root session-id)) "/current.ednl")))
+
+(defn- cached-transcript [opts ep]
+  (let [fs*        (:fs opts)
+        root       (:root opts)
+        ss         (:session-store opts)
+        session-id (backing-session-id ss ep)
+        key        [fs* root session-id]
+        stamp      (fs/modified fs* (transcript-path fs* root session-id))
+        cached     (get @transcript-cache key)]
+    (if (and cached (= stamp (:stamp cached)))
+      {:transcript (:transcript cached) :reads 0}
+      (let [transcript (or (when (and ss session-id)
+                             (session-store/chronicle-transcript ss session-id))
+                           [])]
+        (swap! transcript-cache assoc key {:stamp stamp :transcript transcript})
+        {:transcript transcript :reads 1}))))
+
+(defn- power-of-two? [n]
+  (zero? (bit-and n (dec n))))
+
+(defn- report-seal-result! [opts ep result]
+  (let [key [(:root opts) (:crew opts) (:id ep)]]
+    (if (or (= :error (:status result))
+            (= :no-provider (:reason result)))
+      (let [consecutive (get (swap! seal-failure-streaks update key (fnil inc 0)) key)]
+        (when (power-of-two? consecutive)
+          (log/warn :episodes/seal-failed
+                    :episode (:id ep)
+                    :crew (:crew opts)
+                    :reason (:reason result)
+                    :raw (:raw result)
+                    :error (:message result)
+                    :consecutive consecutive)))
+      (swap! seal-failure-streaks dissoc key))))
+
 (defn- process-episode! [opts ep]
   (let [ss (:session-store opts)]
     (if (and ss (session-store/in-flight? ss (:id ep)))
-      {:status :skipped :reason :in-flight :episode-id (:id ep)}
-      (let [sealed (lifecycle/maybe-seal! (assoc opts :episode-id (:id ep) :trigger :idle))]
-        (lifecycle/maybe-close-if-cold! (assoc opts :episode-id (:id ep)))
-        sealed))))
+      {:status :skipped :reason :in-flight :episode-id (:id ep) :transcript-reads 0}
+      (let [{:keys [transcript reads]} (cached-transcript opts ep)
+            episode-opts (assoc opts :episode-id (:id ep) :transcript transcript)
+            sealed       (lifecycle/maybe-seal! (assoc episode-opts
+                                                       :trigger :idle
+                                                       :warn-on-failure? false))
+            _            (report-seal-result! opts ep sealed)
+            closed       (lifecycle/maybe-close-if-cold! episode-opts)]
+        {:status           (:status sealed)
+         :close-status     (:status closed)
+         :reason           (:reason sealed)
+         :transcript-reads reads}))))
 
 (defn tick!
   ([] (tick! {}))
@@ -68,23 +128,35 @@
          cfg (load-cfg cfg fs* root)
          crews (episodes-crews cfg fs* root)]
      (when (compare-and-set! ticking? false true)
-       (try
-         (binding [memory/*now* now]
-           (doseq [crew crews]
-             (let [open (->> (store/list-episodes fs* root crew)
-                             (filter #(= :open (:status %))))]
-               (doseq [ep open]
-                 (process-episode! {:fs            fs*
-                                    :root          root
-                                    :crew          crew
-                                    :cfg           cfg
-                                    :session-store ss
-                                    :provider      provider
-                                    :model         model
-                                    :now           now}
-                                   ep)))))
-         (finally
-           (reset! ticking? false)))))))
+       (let [started (System/nanoTime)
+             results (atom [])]
+         (try
+           (binding [memory/*now* now]
+             (doseq [crew crews]
+               (let [open (->> (store/list-episodes fs* root crew)
+                               (filter #(= :open (:status %))))]
+                 (doseq [ep open]
+                   (swap! results conj
+                          (process-episode! {:fs            fs*
+                                             :root          root
+                                             :crew          crew
+                                             :cfg           cfg
+                                             :session-store ss
+                                             :provider      provider
+                                             :model         model
+                                             :now           now}
+                                            ep))))))
+           (finally
+             (let [results @results]
+               (log/info :episodes/tick
+                         :elapsed-ms (long (/ (- (System/nanoTime) started) 1000000))
+                         :crews (count crews)
+                         :episodes-examined (count results)
+                         :sealed (count (filter #(= :sealed (:status %)) results))
+                         :closed (count (filter #(= :closed (:close-status %)) results))
+                         :skipped-in-flight (count (filter #(= :in-flight (:reason %)) results))
+                         :transcript-reads (reduce + 0 (map :transcript-reads results))))
+             (reset! ticking? false))))))))
 
 (defn start!
   [{:keys [tick-ms]

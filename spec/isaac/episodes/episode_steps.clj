@@ -1,15 +1,18 @@
 (ns isaac.episodes.episode-steps
   "Feature steps for episode migration assertions."
   (:require
-    [clojure.string :as str]
     [clojure.edn :as edn]
+    [clojure.string :as str]
     [gherclj.core :as g :refer [defgiven defthen defwhen helper!]]
     [isaac.config.loader :as loader]
+    [isaac.drive.dispatch :as drive-dispatch]
     [isaac.episodes.store :as store]
     [isaac.episodes.worker :as worker]
-    [isaac.drive.dispatch :as drive-dispatch]
     [isaac.foundation.cli-steps :as fcli]
+    [isaac.foundation.log-steps]
     [isaac.fs :as fs]
+    [isaac.logger :as log]
+    [isaac.module.loader :as module-loader]
     [isaac.nexus :as nexus]
     [isaac.recall.index :as recall-index]
     [isaac.recall.score :as score]
@@ -17,15 +20,13 @@
     [isaac.session.session-steps :as session-steps]
     [isaac.session.store.spi :as session-store]
     [isaac.step-tables :as match]
-    [isaac.logger :as log]
-    [isaac.module.loader :as module-loader]
     [isaac.tool.memory :as memory]
-    [isaac.tool.registry :as tool-registry]
-    [isaac.foundation.log-steps]))
+    [isaac.tool.registry :as tool-registry]))
 
 (helper! isaac.episodes.episode-steps)
 
 (defn- register-module-contributions! []
+  (worker/-reset-state!)
   (nexus/-with-nexus {:fs (fs/real-fs)}
     (module-loader/process-manifest-berths! (module-loader/builtin-index))))
 

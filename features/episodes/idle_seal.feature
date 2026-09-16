@@ -154,7 +154,6 @@ Feature: Idle sealing — a quiet thread becomes recallable within minutes
       | event             | episode           |
       | :episodes/closing | 20260301100000000 |
 
-  @wip
   Scenario: the worker logs one summary per tick (isaac-a0wp)
     Given the current time is "2026-03-01T10:00:00"
     And the following model responses are queued:
@@ -166,7 +165,6 @@ Feature: Idle sealing — a quiet thread becomes recallable within minutes
       | level | event           | episodes-examined | sealed | closed | elapsed-ms |
       | :info | :episodes/tick  | 1                 | 0      | 0      | #*         |
 
-  @wip
   Scenario: an unchanged episode is not re-read on the next tick (isaac-a0wp)
     Given the current time is "2026-03-01T10:00:00"
     And the following model responses are queued:
@@ -180,7 +178,6 @@ Feature: Idle sealing — a quiet thread becomes recallable within minutes
       | level | event          | episodes-examined | transcript-reads |
       | :info | :episodes/tick | 1                 | 0                |
 
-  @wip
   Scenario: repeated seal failures report a streak instead of one warn per tick (isaac-a0wp)
     Given the current time is "2026-03-01T10:00:00"
     And the following model responses are queued:
