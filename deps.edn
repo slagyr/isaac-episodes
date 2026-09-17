@@ -1,26 +1,34 @@
 {:paths ["src" "resources"]
  :deps {io.github.slagyr/isaac-agent {:git/url "https://github.com/slagyr/isaac-agent.git"
-                                      :git/sha "cd9361c4dbcd9719c379b9e733008c73fc5c7938"}
+                                      :git/sha "2ed58f77d33d3f0ee72cb840401f793c97eba5e2"}
         io.github.slagyr/isaac-foundation {:git/url "https://github.com/slagyr/isaac-foundation.git"
                                            :git/sha "d0b5ff547f1c98d68da26f3ef1503ed1acb32b2b"}
         io.github.slagyr/isaac-http {:git/url "https://github.com/slagyr/isaac-http.git"
-                                       :git/sha "11e43014ad5c7b9c8bb693e0eb4f673bbd23991d"}
-        io.github.slagyr/gherclj {:git/tag "v1.4.0" :git/sha "85245b1"}
-        io.github.slagyr/isaac-foundation-spec {:git/url "https://github.com/slagyr/isaac-foundation.git"
-                                                :git/sha "d0b5ff547f1c98d68da26f3ef1503ed1acb32b2b"
-                                                :deps/root "spec"}
-        io.github.slagyr/isaac-foundation-test-support {:git/url "https://github.com/slagyr/isaac-foundation.git"
-                                                        :git/sha "d0b5ff547f1c98d68da26f3ef1503ed1acb32b2b"
-                                                        :deps/root "spec-support"}
-        io.github.slagyr/isaac-agent-spec {:git/url "https://github.com/slagyr/isaac-agent.git"
-                                           :git/sha "cd9361c4dbcd9719c379b9e733008c73fc5c7938"
-                                           :deps/root "spec"}}
+                                       :git/sha "11e43014ad5c7b9c8bb693e0eb4f673bbd23991d"}}
  :aliases
  {:spec {:extra-paths ["spec"]
-         :extra-deps {speclj/speclj {:mvn/version "3.13.0"}}
+         :extra-deps {speclj/speclj {:mvn/version "3.13.0"}
+                      io.github.slagyr/isaac-foundation-spec {:git/url "https://github.com/slagyr/isaac-foundation.git"
+                                                              :git/sha "d0b5ff547f1c98d68da26f3ef1503ed1acb32b2b"
+                                                              :deps/root "spec"}
+                      io.github.slagyr/isaac-foundation-test-support {:git/url "https://github.com/slagyr/isaac-foundation.git"
+                                                                      :git/sha "d0b5ff547f1c98d68da26f3ef1503ed1acb32b2b"
+                                                                      :deps/root "spec-support"}
+                      io.github.slagyr/isaac-agent-spec {:git/url "https://github.com/slagyr/isaac-agent.git"
+                                                         :git/sha "2ed58f77d33d3f0ee72cb840401f793c97eba5e2"
+                                                         :deps/root "spec"}}
          :main-opts ["-m" "speclj.main" "-c" "-D" "spec"]}
   :features {:extra-paths ["spec"]
-             :extra-deps {io.github.slagyr/gherclj {:git/tag "v1.4.0" :git/sha "85245b1"}}
+             :extra-deps {io.github.slagyr/gherclj {:git/tag "v1.4.0" :git/sha "85245b1"}
+                          io.github.slagyr/isaac-foundation-spec {:git/url "https://github.com/slagyr/isaac-foundation.git"
+                                                                  :git/sha "d0b5ff547f1c98d68da26f3ef1503ed1acb32b2b"
+                                                                  :deps/root "spec"}
+                          io.github.slagyr/isaac-foundation-test-support {:git/url "https://github.com/slagyr/isaac-foundation.git"
+                                                                          :git/sha "d0b5ff547f1c98d68da26f3ef1503ed1acb32b2b"
+                                                                          :deps/root "spec-support"}
+                          io.github.slagyr/isaac-agent-spec {:git/url "https://github.com/slagyr/isaac-agent.git"
+                                                             :git/sha "2ed58f77d33d3f0ee72cb840401f793c97eba5e2"
+                                                             :deps/root "spec"}}
              :main-opts ["-m" "gherclj.main" "-f" "features"
                          "-s" "isaac.foundation.root-steps"
                          "-s" "isaac.foundation.fs-steps"
