@@ -5,6 +5,7 @@
     [isaac.recall.embedding :as embedding]
     [isaac.recall.index :as sut]
     [isaac.recall.score :as score]
+    [clojure.string :as str]
     [speclj.core :refer [before context describe it should should-not should= with]]))
 
 (def ^:private root "/tmp-recall-root")
@@ -137,6 +138,23 @@
           (should= 2 (:new result))
           (should= 1 (:skipped-routine result))
           (should= ["s1"] (distinct (mapv :scene-id rows))))))
+
+    (it "probes the embedder with a non-empty string so OpenAI-compatible APIs accept it"
+      (let [cfg {:episodes {:embedding {:api "grover" :model "mini-embed"}}}
+            first-texts (atom nil)
+            real-embed embedding/embed-texts]
+        (write-closed! @mem "cordelia" "ep1"
+                       [{:id "s1" :gist "wine" :text "pinot"
+                         :started-at "2026-03-01T10:00:00"
+                         :ended-at "2026-03-01T10:05:00"}])
+        (with-redefs [embedding/embed-texts
+                      (fn [cfg texts]
+                        (when (nil? @first-texts)
+                          (reset! first-texts texts))
+                        (real-embed cfg texts))]
+          (sut/index-crew! @mem root "cordelia" cfg {}))
+        (should= 1 (count @first-texts))
+        (should-not (str/blank? (first @first-texts)))))
     )
 
   (context "embed batching"

@@ -133,7 +133,8 @@
    Returns {:new N} on success, or {:error :no-embedding :message ...}.
    `--rebuild` (`:rebuild? true`) drops existing rows first."
   [fs* root crew cfg {:keys [rebuild?]}]
-  (let [embedder-result (embedding/embed-texts cfg [""])]
+  ;; OpenAI-compatible /embeddings rejects empty input; ollama did not.
+  (let [embedder-result (embedding/embed-texts cfg ["ok"])]
     (if (:error embedder-result)
       embedder-result
       (let [model    (or (configured-model cfg) "")
