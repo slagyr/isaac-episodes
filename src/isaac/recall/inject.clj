@@ -18,8 +18,14 @@
 (def LINEAGE_HEADER
   "Previously in this conversation (fetch full detail with recall__scene <id>):")
 
-(def DEFAULT_INJECT {:full 1 :gists 2})
-(def LINEAGE_CAP 10)
+(def SEARCH_SHORTLIST 8)
+(def LEX_FLOOR 0.5)
+(def SEARCH_FULL 1)
+(def SEARCH_GISTS 2)
+(def THREAD_GISTS 10)
+(def DEFAULT_FLOOR_COS 0.47)
+
+(def DEFAULT_INJECT {:full SEARCH_FULL :gists SEARCH_GISTS})
 
 (defn scene-date [scene]
   (let [ts (str (or (:started-at scene) (:ended-at scene) ""))]
@@ -31,30 +37,58 @@
 (defn- inject-cfg [cfg]
   (merge DEFAULT_INJECT (get-in cfg [:recall :inject] {})))
 
-(defn render-search-block
-  "Tiered search block: first :full hits include distilled text; next :gists are gist-only."
-  [scenes inject]
-  (let [full-n  (long (or (:full inject) 1))
-        gist-n  (long (or (:gists inject) 2))
-        full    (vec (take full-n scenes))
-        gists   (vec (take gist-n (drop full-n scenes)))
-        lines   (concat
-                  (map (fn [s] (str (format-line s) "\n" (or (:text s) ""))) full)
-                  (map format-line gists))]
+(defn- format-search-block [{:keys [full gists]}]
+  (let [lines (concat
+                (map (fn [scene] (str (format-line scene) "\n" (or (:text scene) ""))) full)
+                (map format-line gists))]
     (when (seq lines)
       (str/join "\n" (cons SEARCH_HEADER lines)))))
 
+(defn render-search-block
+  "Render selected search tiers. The two-argument form selects tiers for compatibility."
+  ([search]
+   (format-search-block search))
+  ([scenes inject]
+   (let [full-n (long (or (:full inject) SEARCH_FULL))
+         gist-n (long (or (:gists inject) SEARCH_GISTS))]
+     (format-search-block {:full (vec (take full-n scenes))
+                           :gists (vec (take gist-n (drop full-n scenes)))}))))
+
 (defn render-lineage-block [scenes]
   (when (seq scenes)
-    (str/join "\n" (cons LINEAGE_HEADER (map format-line (take LINEAGE_CAP scenes))))))
+    (str/join "\n" (cons LINEAGE_HEADER (map format-line (take THREAD_GISTS scenes))))))
+
+(defn- hit-best-cos [hit]
+  (max (double (or (:text hit) 0.0))
+       (double (or (:gist hit) 0.0))))
+
+(defn- admitted? [hit floor]
+  (or (zero? floor)
+      (>= (hit-best-cos hit) floor)
+      (>= (double (or (:lex hit) 0.0)) LEX_FLOOR)))
 
 (defn passing-hits [hits floor]
-  (filterv (fn [h]
-             (score/match? {:best-cos (max (double (or (:text h) 0.0))
-                                           (double (or (:gist h) 0.0)))
-                            :lex      (:lex h)}
-                           floor))
-           (or hits [])))
+  (filterv #(admitted? % (double (or floor 0.0))) (or hits [])))
+
+(defn select-injected
+  "Rank search hits by blend, shortlist, admit by cosine OR lexical floor, then
+   select full/gist search tiers. Thread gists remain independent of search admission."
+  ([hits thread-scenes floor exclude-ids]
+   (select-injected hits thread-scenes floor exclude-ids DEFAULT_INJECT))
+  ([hits thread-scenes floor exclude-ids inject]
+   (let [floor       (double (or floor DEFAULT_FLOOR_COS))
+         full-n      (long (or (:full inject) SEARCH_FULL))
+         gist-n      (long (or (:gists inject) SEARCH_GISTS))
+         shortlisted (->> (or hits [])
+                          (sort-by (juxt (comp - #(double (or % 0.0)) :score) :scene-id))
+                          (take SEARCH_SHORTLIST))
+         admitted    (->> shortlisted
+                          (filter #(admitted? % floor))
+                          (remove #(contains? exclude-ids (:scene-id %)))
+                          vec)]
+     {:search       {:full (vec (take full-n admitted))
+                     :gists (vec (take gist-n (drop full-n admitted)))}
+      :thread-gists (vec (take THREAD_GISTS (or thread-scenes [])))})))
 
 (defn- now-iso []
   (str (or (memory/now) (java.time.Instant/now))))
@@ -90,12 +124,12 @@
 
 (defn- search-result [fs* root crew query cfg]
   (try
-    (query/query fs* root crew query cfg {:top 8})
+    (query/query fs* root crew query cfg {:top SEARCH_SHORTLIST})
     (catch Exception e
       (log/warn :recall/skipped :reason :embed-failed :error (.getMessage e))
       {:error :embed-failed :message (.getMessage e)})))
 
-(defn- passing-search-hits [result floor exclude-ids]
+(defn- search-hits [result]
   (if (or (nil? result) (:error result))
     (do
       (when (and (:error result)
@@ -104,27 +138,16 @@
                  (not= :no-rows (:error result)))
         (log/warn :recall/skipped :reason (:error result) :message (:message result)))
       [])
-    (->> (passing-hits (:hits result) floor)
-         ;; Grover's 4-d stub vectors saturate near 0.999, so a
-         ;; high floor-cos alone cannot reject junk. Require a
-         ;; lexical hit when the floor is that strict.
-         (filter #(or (< (double floor) 0.99)
-                      (pos? (double (or (:lex %) 0.0)))))
-         (remove #(contains? exclude-ids (:scene-id %)))
-         vec)))
+    (:hits result)))
 
 (defn- lineage-scenes [fs* root crew parent-id]
   (when parent-id
-    (vec (take LINEAGE_CAP (store/list-scenes fs* root crew parent-id)))))
+    (vec (take THREAD_GISTS (store/list-scenes fs* root crew parent-id)))))
 
 (defn- append-block! [session-store* session-id block]
   (when (and session-store* session-id (not (str/blank? block)))
     (session-store/append-message! session-store* session-id
                                    {:role "user" :content block})))
-
-(defn- hit-best-cos [hit]
-  (max (double (or (:text hit) 0.0))
-       (double (or (:gist hit) 0.0))))
 
 (defn- log-cos
   "Cosine as logged. Grover stubs saturate at 1.0; clamp so operators
@@ -187,35 +210,37 @@
                         eid)
                       (:session-id episode)
                       eid)
-          exclude (atom #{})
-          parent  (:parent-episode episode)
-          floor   (score/resolve-floor cfg {})
-          lineage (atom [])]
-      (when (and parent (= :chained action))
-        (let [scenes (mapv #(assoc % :origin-episode parent) (lineage-scenes fs* root crew parent))]
-          (when (seq scenes)
-            (append-block! session-store backing (render-lineage-block scenes))
-            (record-refs! fs* root crew eid scenes query)
-            (swap! exclude into (map :id scenes))
-            (reset! lineage scenes))))
-      (let [result   (search-result fs* root crew query cfg)
-            raw-hits (or (:hits result) [])
-            best     (when (seq raw-hits)
-                       (apply max (map hit-best-cos raw-hits)))
-            found    (mapv #(scene-from-hit fs* root crew %)
-                           (passing-search-hits result floor @exclude))]
-        (when (seq found)
-          (append-block! session-store backing (render-search-block found (inject-cfg cfg)))
-          (record-refs! fs* root crew eid found query))
-        (log-recall-outcome!
-          {:crew        crew
-           :episode     eid
-           :thread      thread
-           :query-chars (query-chars query)
-           :lineage     (count @lineage)
-           :search      (count found)
-           :scene-ids   (mapv #(or (:id %) (:scene-id %)) (concat @lineage found))
-           :top         (when (seq found)
-                          (log-cos (apply max (map hit-best-cos raw-hits))))
-           :best        (log-cos best)
-           :floor       floor})))))
+          parent       (:parent-episode episode)
+          floor        (score/resolve-floor cfg {})
+          lineage      (if (and parent (= :chained action))
+                         (mapv #(assoc % :origin-episode parent) (lineage-scenes fs* root crew parent))
+                         [])
+          result        (search-result fs* root crew query cfg)
+          raw-hits      (or (search-hits result) [])
+          best          (when (seq raw-hits)
+                          (apply max (map hit-best-cos raw-hits)))
+          selected      (select-injected raw-hits lineage floor (set (map :id lineage)) (inject-cfg cfg))
+          thread-gists  (:thread-gists selected)
+          selected-hits (vec (concat (get-in selected [:search :full])
+                                     (get-in selected [:search :gists])))
+          search        (update-vals (:search selected)
+                                     #(mapv (partial scene-from-hit fs* root crew) %))
+          found         (vec (concat (:full search) (:gists search)))]
+      (when (seq thread-gists)
+        (append-block! session-store backing (render-lineage-block thread-gists))
+        (record-refs! fs* root crew eid thread-gists query))
+      (when (seq found)
+        (append-block! session-store backing (render-search-block search))
+        (record-refs! fs* root crew eid found query))
+      (log-recall-outcome!
+        {:crew        crew
+         :episode     eid
+         :thread      thread
+         :query-chars (query-chars query)
+         :lineage     (count thread-gists)
+         :search      (count found)
+         :scene-ids   (mapv #(or (:id %) (:scene-id %)) (concat thread-gists found))
+         :top         (when (seq selected-hits)
+                        (log-cos (apply max (map hit-best-cos selected-hits))))
+         :best        (log-cos best)
+         :floor       floor}))))

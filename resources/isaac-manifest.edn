@@ -46,6 +46,7 @@
                                                          :validations [:present?
                                                                        [:registered-in? :isaac.session.episodes/embedding-api]]}
                                                    :model {:type :string :validations [:present?]}
+                                                   :floor-cos {:type :double}
                                                    :base-url {:type :string}
                                                    :api-key {:type :string}
                                                    :timeout {:type :int}
@@ -56,7 +57,6 @@
                                                         :idle-minutes {:type :int}}}}}}
   :recall {:schema {:name :recall :type :map :description "Recall scoring and injection settings"
                     :schema {:half-life {:type :int}
-                             :floor-cos {:type :double}
                              :weights {:type :map :schema {:text {:type :double}
                                                           :gist {:type :double}
                                                           :lex {:type :double}

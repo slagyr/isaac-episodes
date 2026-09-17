@@ -306,7 +306,6 @@ Feature: Episodes — live (policy + lifecycle)
       | messages | #"(?s)\[2026-03-01-1000-s1x1 · 2026-03-01\] Wine pairing for pheasant" |
       | messages | #"(?s)pinot noir suits roast pheasant.*What wine pairs with pheasant"  |
 
-    @wip
     Scenario: below-floor opens inject nothing
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |

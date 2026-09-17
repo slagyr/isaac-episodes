@@ -9,7 +9,8 @@
     [isaac.recall.inject :as sut]
     [isaac.session.store.memory :as memory-store]
     [isaac.session.store.spi :as session-store]
-    [speclj.core :refer [around before context describe it should should-be-nil should-contain should-not should= with]]))
+    [speclj.core :refer [around before context describe it should should-be-nil should-contain should-not should=
+                         with]]))
 
 (def ^:private root "/tmp-recall-inject")
 
@@ -60,12 +61,38 @@
       (should-contain "[2026-03-01-1000-s1x1 · 2026-03-01] Wine pairing for pheasant" block)
       (should-not (re-find #"pinot noir" block))))
 
-  (it "filters hits below the cosine floor unless lex anchors"
-    (let [hits [{:scene-id "a" :text 0.2 :gist 0.1 :lex 0.0}
-                {:scene-id "b" :text 0.99 :gist 0.5 :lex 0.0}
-                {:scene-id "c" :text 0.1 :gist 0.1 :lex 0.9}]]
-      (should= ["b" "c"]
-               (mapv :scene-id (sut/passing-hits hits 0.5)))))
+  (context "select-injected"
+    (it "ranks by blend, shortlists eight, then admits by cosine or lexical floor"
+      (let [hits (mapv (fn [n]
+                         {:scene-id (str n)
+                          :score    (- 20 n)
+                          :text     (if (= n 9) 0.99 0.1)
+                          :gist     0.1
+                          :lex      (if (= n 2) 0.5 0.0)})
+                       (range 1 10))]
+        (should= ["2"] (mapv :scene-id (get-in (sut/select-injected hits [] 0.47 #{})
+                                                [:search :full])))))
+
+    (it "returns an empty search block when all shortlisted hits fail both floors"
+      (let [hits (mapv (fn [n]
+                         {:scene-id (str n) :score (- 10 n) :text 0.1 :gist 0.1 :lex 0.1})
+                       (range 1 10))]
+        (should= {:full [] :gists []} (:search (sut/select-injected hits [] 0.47 #{})))))
+
+    (it "keeps thread gists separate from search admission"
+      (let [lineage (mapv #(hash-map :id (str "thread-" %)) (range 12))
+            selected (sut/select-injected [] lineage 0.47 #{})]
+        (should= {:full [] :gists []} (:search selected))
+        (should= 10 (count (:thread-gists selected)))))
+
+    (it "formats one full and two gist search hits"
+      (let [hits [{:scene-id "a" :score 3 :text 0.9 :lex 0}
+                  {:scene-id "b" :score 2 :text 0.8 :lex 0}
+                  {:scene-id "c" :score 1 :text 0.7 :lex 0}]]
+        (should= {:full ["a"] :gists ["b" "c"]}
+                 (update-vals (:search (sut/select-injected hits [] 0.47 #{}))
+                              #(mapv :scene-id %)))))
+    )
 
   (context "inject-on-open!"
     (with ss (memory-store/create-store root))

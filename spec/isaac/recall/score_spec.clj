@@ -141,9 +141,11 @@
     (it "defaults to 0.47"
       (should= 0.47 (sut/resolve-floor {} {})))
 
-    (it "overlays :recall {:floor-cos} then CLI :floor-cos; 0 disables"
-      (should= 0.0 (sut/resolve-floor {:recall {:floor-cos 0}} {}))
-      (should= 0.999 (sut/resolve-floor {:recall {:floor-cos 0}} {:floor-cos 0.999})))
+    (it "overlays the embedding model floor then the CLI floor; leftover recall config is ignored"
+      (should= 0.0 (sut/resolve-floor {:episodes {:embedding {:floor-cos 0}}} {}))
+      (should= 0.47 (sut/resolve-floor {:recall {:floor-cos 0.999}} {}))
+      (should= 0.999 (sut/resolve-floor {:episodes {:embedding {:floor-cos 0}}}
+                                        {:floor-cos 0.999})))
 
     (it "matches when best-cos meets the floor or lex is a rare-term anchor"
       (should (sut/match? {:best-cos 0.47 :lex 0.1} 0.47))

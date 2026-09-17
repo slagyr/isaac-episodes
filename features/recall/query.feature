@@ -241,7 +241,6 @@ Feature: Recall — query
       | 2026-03-01-1008-s5x5       |
     And the exit code is 0
 
-    @wip
     Scenario: floor resolves defaults, then embedding :floor-cos, then CLI flag; 0 disables
     Given config file "isaac.edn" containing:
       """
@@ -264,7 +263,6 @@ Feature: Recall — query
     Then the stderr does not contain "weak matches"
     And the exit code is 0
 
-    @wip
     Scenario: leftover :recall :floor-cos does not raise the floor
     Given config file "isaac.edn" containing:
       """

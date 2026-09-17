@@ -198,9 +198,9 @@
     (merge default-weights from-cfg from-flags)))
 
 (defn resolve-floor
-  "defaults (0.47) → :recall {:floor-cos} → CLI :floor-cos. 0 disables."
+  "defaults (0.47) → embedding model :floor-cos → CLI :floor-cos. 0 disables."
   [cfg flags]
-  (let [from-cfg (as-number (get-in cfg [:recall :floor-cos]))
+  (let [from-cfg (as-number (get-in cfg [:episodes :embedding :floor-cos]))
         from-flag (as-number (get flags :floor-cos))]
     (cond
       (some? from-flag) from-flag
