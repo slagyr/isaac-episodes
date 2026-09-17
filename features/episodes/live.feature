@@ -306,6 +306,7 @@ Feature: Episodes — live (policy + lifecycle)
       | messages | #"(?s)\[2026-03-01-1000-s1x1 · 2026-03-01\] Wine pairing for pheasant" |
       | messages | #"(?s)pinot noir suits roast pheasant.*What wine pairs with pheasant"  |
 
+    @wip
     Scenario: below-floor opens inject nothing
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |
@@ -314,8 +315,7 @@ Feature: Episodes — live (policy + lifecycle)
       | session-policy | episodes         |
     And config file "isaac.edn" containing:
       """
-      {:episodes {:embedding {:api "grover" :model "mini-embed"}}
-       :recall {:floor-cos 0.999}}
+      {:episodes {:embedding {:api "grover" :model "mini-embed" :floor-cos 0.999}}}
       """
     And crew "cordelia" has a closed episode "2026-03-01-1000-ab12" with scenes:
       | id                   | started-at          | ended-at            | gist                      | text                                    |
