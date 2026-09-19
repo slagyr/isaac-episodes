@@ -5,10 +5,10 @@
         speclj/speclj {:mvn/version "3.13.0"}
         io.github.slagyr/gherclj {:git/tag "v1.4.0" :git/sha "85245b1"}
         io.github.slagyr/isaac-foundation-spec {:git/url "https://github.com/slagyr/isaac-foundation.git"
-                                                :git/sha "d0b5ff547f1c98d68da26f3ef1503ed1acb32b2b"
+                                                :git/sha "b644562111daa3c8d08a0e75306165534b0f7e1c"
                                                 :deps/root "spec"}
         io.github.slagyr/isaac-foundation-test-support {:git/url "https://github.com/slagyr/isaac-foundation.git"
-                                                        :git/sha "d0b5ff547f1c98d68da26f3ef1503ed1acb32b2b"
+                                                        :git/sha "b644562111daa3c8d08a0e75306165534b0f7e1c"
                                                         :deps/root "spec-support"}
         io.github.slagyr/isaac-agent-spec {:git/url "https://github.com/slagyr/isaac-agent.git"
                                            :git/sha "2ed58f77d33d3f0ee72cb840401f793c97eba5e2"
@@ -16,4 +16,7 @@
  :tasks
  {spec {:task (shell "clojure" "-M:spec")}
   features {:task (apply shell "clojure" "-M:features" *command-line-args*)}
-  ci {:task (do (run 'spec) (run 'features))}}}
+  lint-cli-host {:doc "Fail on process-global operations outside the CLI host boundary"
+                 :requires ([isaac.foundation.cli-host-lint :as lint])
+                 :task (lint/lint! *command-line-args*)}
+  ci {:task (do (run 'lint-cli-host) (run 'spec) (run 'features))}}}

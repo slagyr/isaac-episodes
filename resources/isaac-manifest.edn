@@ -1,5 +1,5 @@
 {:id :isaac.session.episodes
- :version "0.1.0"
+ :version "0.1.1"
  :builtin? true
  :factory isaac.episodes.module/create-module
 
@@ -17,13 +17,16 @@
  :isaac/cli
  {:embed {:usage "embed [options] [text ...]"
           :summary "Embed text with the configured embedding API"
-          :namespace isaac.recall.embedding.cli}
+          :namespace isaac.recall.embedding.cli
+          :hosted true}
   :episodes {:usage "episodes [subcommand] [options]"
              :summary "Manage episodic memory (migrate sessions to scenes + gists)"
-             :namespace isaac.episodes.cli}
+             :namespace isaac.episodes.cli
+             :hosted true}
   :recall {:usage "recall [options] <query>"
            :summary "Rank a crew's indexed scenes against a query"
-           :namespace isaac.recall.cli}}
+           :namespace isaac.recall.cli
+           :hosted true}}
 
  :isaac.agent/tools
  {:recall/search {:factory isaac.episodes.tools/search-tool-factory}

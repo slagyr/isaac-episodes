@@ -5,6 +5,7 @@
     [clojure.tools.cli :as tools-cli]
     [isaac.agent.config.runtime :as runtime]
     [isaac.cli.api :as cli-api]
+    [isaac.cli.host :as host]
     [isaac.config.loader :as loader]
     [isaac.config.root :as root]
     [isaac.episodes.layout :as layout]
@@ -57,9 +58,17 @@
 (defn- install! [opts]
   (let [root-dir (or (:root opts) (root/default-root opts))
         fs*      (or (:fs opts) (fs/instance) (fs/real-fs))
-        cfg      (loader/load-config! root-dir fs* "episodes cli")]
-    (runtime/install! {:config cfg})
-    {:root root-dir :fs fs* :cfg cfg :store (session-store/registered-store)}))
+        loaded*  (atom nil)]
+    (host/ensure-runtime!
+      {:install!
+       (fn []
+         (let [cfg (loader/load-config! root-dir fs* "episodes cli")]
+           (reset! loaded* cfg)
+           (runtime/install! {:config cfg})))})
+    {:root  root-dir
+     :fs    fs*
+     :cfg   (or @loaded* (loader/snapshot "episodes cli") {})
+     :store (session-store/registered-store)}))
 
 (def ^:private index-option-spec
   [["-h" "--help" "Show help"]
