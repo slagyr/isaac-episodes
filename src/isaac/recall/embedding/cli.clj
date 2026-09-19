@@ -4,6 +4,7 @@
     [clojure.string :as str]
     [clojure.tools.cli :as tools-cli]
     [isaac.cli.api :as cli-api]
+    [isaac.cli.host :as host]
     [isaac.config.loader :as loader]
     [isaac.config.root :as root]
     [isaac.fs :as fs]
@@ -26,8 +27,15 @@
 
 (defn- load-cfg [opts]
   (let [root-dir (or (:root opts) (root/default-root opts))
-        fs*      (or (fs/instance) (fs/real-fs))]
-    (loader/load-config! root-dir fs* "embed cli")))
+        fs*      (or (fs/instance) (fs/real-fs))
+        loaded*  (atom nil)]
+    (host/ensure-runtime!
+      {:install!
+       (fn []
+         (let [cfg (loader/load-config! root-dir fs* "embed cli")]
+           (reset! loaded* cfg)
+           cfg))})
+    (or @loaded* (loader/snapshot "embed cli") {})))
 
 (defn- print-err! [msg]
   (binding [*out* *err*]

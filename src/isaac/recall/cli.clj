@@ -5,6 +5,7 @@
     [clojure.tools.cli :as tools-cli]
     [isaac.agent.config.runtime :as runtime]
     [isaac.cli.api :as cli-api]
+    [isaac.cli.host :as host]
     [isaac.config.loader :as loader]
     [isaac.config.root :as root]
     [isaac.fs :as fs]
@@ -56,9 +57,16 @@
 (defn- install! [opts]
   (let [root-dir (or (:root opts) (root/default-root opts))
         fs*      (or (:fs opts) (fs/instance) (fs/real-fs))
-        cfg      (loader/load-config! root-dir fs* "recall cli")]
-    (runtime/install! {:config cfg})
-    {:root root-dir :fs fs* :cfg cfg}))
+        loaded*  (atom nil)]
+    (host/ensure-runtime!
+      {:install!
+       (fn []
+         (let [cfg (loader/load-config! root-dir fs* "recall cli")]
+           (reset! loaded* cfg)
+           (runtime/install! {:config cfg})))})
+    {:root root-dir
+     :fs   fs*
+     :cfg  (or @loaded* (loader/snapshot "recall cli") {})}))
 
 (defn- format-score [n]
   (let [n (double (or n 0.0))]
