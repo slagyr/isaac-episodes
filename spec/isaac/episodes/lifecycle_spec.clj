@@ -45,7 +45,7 @@
     (nexus/-with-nested-nexus {:fs @mem :sessions {:store @ss}}
       (example)))
 
-  (it "opens an episode with :thread, :status :open, and a backing session named by the episode id"
+  (it "opens an episode with :thread, :status :open, and a backing session named by the session id"
     (with-redefs [isaac.episodes.ids/chaos-suffix (constantly "ab12")]
       (binding [memory/*now* (java.time.Instant/parse "2026-03-01T10:00:00Z")]
         (let [ep (sut/open-episode! {:fs @mem :root @root :crew "cordelia"
@@ -56,7 +56,16 @@
           (should= "cordelia" (:crew ep))
           (should= "20260301100000000" (:id ep))
           (should-be-nil (:parent-episode ep))
-          (should= "20260301100000000" (:id (session-store/get-session @ss (:id ep))))))))
+          (should= "reef-chat" (:id (session-store/get-session @ss "reef-chat")))
+          (should-be-nil (session-store/get-session @ss (:id ep)))))))
+
+  (it "opens no backing session when the caller names none"
+    (with-redefs [isaac.episodes.ids/chaos-suffix (constantly "ab13")]
+      (binding [memory/*now* (java.time.Instant/parse "2026-03-01T10:05:00Z")]
+        (let [ep (sut/open-episode! {:fs @mem :root @root :crew "cordelia"
+                                     :session-store @ss})]
+          (should= :open (:status ep))
+          (should-be-nil (session-store/get-session @ss (:id ep)))))))
 
   (it "opens a successor with :parent-episode"
     (with-redefs [isaac.episodes.ids/chaos-suffix (constantly "cd34")]
@@ -73,7 +82,7 @@
         (let [ep (sut/open-episode! {:fs @mem :root @root :crew "cordelia"
                                      :thread "reef-chat" :session-store @ss
                                      :seed-compaction {:summary "Summary so far"}})
-              transcript (session-store/get-transcript @ss (:id ep))
+              transcript (session-store/get-transcript @ss (:thread ep))
               entries (vec (remove #(= "session" (:type %)) transcript))]
           (should= "compaction" (:type (first entries)))
           (should= "Summary so far" (:summary (first entries)))))))
@@ -197,7 +206,7 @@
                                              :thread "reef-chat" :session-store @ss
                                              :cfg {:episodes {:ttl-minutes 60}}
                                              :cwd "/tmp" :origin {:kind :cli}})]
-          (should= "20260301100000000" (:session-key resolved))
+          (should= "reef-chat" (:session-key resolved))
           (should= :opened (:action resolved))
           (should= "reef-chat" (get-in resolved [:episode :thread]))))))
 
@@ -206,13 +215,13 @@
       (binding [memory/*now* (java.time.Instant/parse "2026-03-01T10:00:00Z")]
         (let [opened (sut/open-episode! {:fs @mem :root @root :crew "cordelia"
                                          :thread "reef-chat" :session-store @ss})
-              _ (session-store/append-message! @ss (:id opened) {:role "user" :content "Chart"})
-              _ (session-store/append-message! @ss (:id opened) {:role "assistant" :content "Aye"})]
+              _ (session-store/append-message! @ss "reef-chat" {:role "user" :content "Chart"})
+              _ (session-store/append-message! @ss "reef-chat" {:role "assistant" :content "Aye"})]
           (binding [memory/*now* (java.time.Instant/parse "2026-03-01T10:10:00Z")]
             (let [resolved (sut/resolve-thread! {:fs @mem :root @root :crew "cordelia"
                                                  :thread "reef-chat" :session-store @ss
                                                  :cfg {:episodes {:ttl-minutes 60}}})]
-              (should= (:id opened) (:session-key resolved))
+              (should= "reef-chat" (:session-key resolved))
               (should= :warm (:action resolved))))))))
 
   (it "cold-resolves by closing the open episode and opening a successor with :parent-episode"
@@ -220,8 +229,8 @@
       (binding [memory/*now* (java.time.Instant/parse "2026-03-01T10:00:00Z")]
         (let [opened (sut/open-episode! {:fs @mem :root @root :crew "cordelia"
                                          :thread "reef-chat" :session-store @ss})
-              _ (session-store/append-message! @ss (:id opened) {:role "user" :content "Chart the reef passage."})
-              _ (session-store/append-message! @ss (:id opened) {:role "assistant" :content "Charted, keep west."})
+              _ (session-store/append-message! @ss "reef-chat" {:role "user" :content "Chart the reef passage."})
+              _ (session-store/append-message! @ss "reef-chat" {:role "assistant" :content "Charted, keep west."})
               provider (llm-provider/make-provider "grover" {:api "grover" :auth "none"})
               _ (grover/enqueue! [{:type "text" :content "1-2: Reef charting"}])]
           (binding [memory/*now* (java.time.Instant/parse "2026-03-01T11:45:00Z")]
@@ -239,8 +248,8 @@
       (binding [memory/*now* (java.time.Instant/parse "2026-03-01T10:00:00Z")]
         (let [opened (sut/open-episode! {:fs @mem :root @root :crew "cordelia"
                                          :thread "reef-chat" :session-store @ss})
-              _ (session-store/append-message! @ss (:id opened) {:role "user" :content "Please summarize the logging work."})
-              _ (session-store/append-message! @ss (:id opened) {:role "assistant" :content "We discussed sinks and the tool loop."})
+              _ (session-store/append-message! @ss "reef-chat" {:role "user" :content "Please summarize the logging work."})
+              _ (session-store/append-message! @ss "reef-chat" {:role "assistant" :content "We discussed sinks and the tool loop."})
               provider (llm-provider/make-provider "grover" {:api "grover" :auth "none"})
               _ (grover/enqueue! [{:type "text" :content "1-2: Logging retrospective"}])]
           (binding [memory/*now* (java.time.Instant/parse "2026-03-01T10:30:00Z")]
@@ -249,13 +258,15 @@
                                               :summary "Summary so far"
                                               :provider provider :model "gist"})
                   successor (:episode result)
-                  entries (->> (session-store/get-transcript @ss (:id successor))
+                  entries (->> (session-store/get-transcript @ss "reef-chat")
                                (remove #(= "session" (:type %)))
                                vec)]
               (should= :chained (:action result))
               (should= (:id opened) (:parent-episode successor))
-              (should= "compaction" (:type (first entries)))
-              (should= "Summary so far" (:summary (first entries)))
+              ;; The session id is stable across the chain, so the successor's
+              ;; summary lands on the same transcript, after the closed episode.
+              (should= "compaction" (:type (last entries)))
+              (should= "Summary so far" (:summary (last entries)))
               (should= :closed (:status (store/read-episode @mem @root "cordelia" (:id opened))))))))))
 
   (it "compact-close reuses an already-open successor on the thread instead of opening another"
@@ -263,8 +274,8 @@
       (binding [memory/*now* (java.time.Instant/parse "2026-03-01T10:00:00Z")]
         (let [opened (sut/open-episode! {:fs @mem :root @root :crew "cordelia"
                                          :thread "reef-chat" :session-store @ss})
-              _ (session-store/append-message! @ss (:id opened) {:role "user" :content "Please summarize the logging work."})
-              _ (session-store/append-message! @ss (:id opened) {:role "assistant" :content "We discussed sinks and the tool loop."})
+              _ (session-store/append-message! @ss "reef-chat" {:role "user" :content "Please summarize the logging work."})
+              _ (session-store/append-message! @ss "reef-chat" {:role "assistant" :content "We discussed sinks and the tool loop."})
               provider (llm-provider/make-provider "grover" {:api "grover" :auth "none"})
               _ (grover/enqueue! [{:type "text" :content "1-2: Logging retrospective"}])]
           (binding [memory/*now* (java.time.Instant/parse "2026-03-01T10:30:00Z")]
@@ -282,7 +293,7 @@
                   open-eps (->> (store/list-episodes @mem @root "cordelia")
                                 (filter #(= :open (:status %))))]
               (should= :reused (:action second))
-              (should= successor-id (:session-key second))
+              (should= "reef-chat" (:session-key second))
               (should= successor-id (get-in second [:episode :id]))
               (should= 1 (count open-eps))
               (should= successor-id (:id (first open-eps)))
@@ -307,8 +318,8 @@
       (binding [memory/*now* (java.time.Instant/parse "2026-03-01T10:00:00Z")]
         (let [opened (sut/open-episode! {:fs @mem :root @root :crew "cordelia"
                                          :thread "reef-chat" :session-store @ss})
-              _ (session-store/append-message! @ss (:id opened) {:role "user" :content "Chart the reef passage."})
-              _ (session-store/append-message! @ss (:id opened) {:role "assistant" :content "Charted, keep west."})
+              _ (session-store/append-message! @ss "reef-chat" {:role "user" :content "Chart the reef passage."})
+              _ (session-store/append-message! @ss "reef-chat" {:role "assistant" :content "Charted, keep west."})
               provider (llm-provider/make-provider "grover" {:api "grover" :auth "none"})
               _ (grover/enqueue! [{:type "text" :content "1-2: Reef charting"}])
               closed (sut/close-open-episodes! {:fs @mem :root @root :crew "cordelia"

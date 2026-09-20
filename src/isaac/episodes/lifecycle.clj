@@ -135,7 +135,9 @@
       {:provider provider* :model (or model (:model ctx) model-id)})))
 
 (defn open-episode!
-  "Create an :open episode record and a backing session named by the episode id.
+  "Create an :open episode record and a backing session named by the session id
+   (:thread). The caller names the session — episodes never mints one, so an
+   episode id (a timestamp) is never a session id.
    opts: :fs :root :crew :thread :session-store :parent-episode :cwd :origin
          :compaction :seed-compaction {:summary ...}"
   [{:keys [fs root crew thread session-store parent-episode cwd origin compaction seed-compaction]}]
@@ -156,12 +158,13 @@
                              :session-store ss}
                       compaction (assoc :compaction compaction))]
     (store/write-episode! fs* root episode [])
-    (if ss
-      (session-ctx/create-with-resolved-behavior! id create-opts)
-      (log/warn :episodes/open-without-store :episode id :crew crew))
+    (cond
+      (nil? thread) (log/warn :episodes/open-without-session-id :episode id :crew crew)
+      (nil? ss)     (log/warn :episodes/open-without-store :episode id :crew crew)
+      :else         (session-ctx/create-with-resolved-behavior! thread create-opts))
     (when-let [summary (:summary seed-compaction)]
-      (when ss
-        (session-store/append-compaction! ss id {:summary summary})))
+      (when (and ss thread)
+        (session-store/append-compaction! ss thread {:summary summary})))
     (log/info :episodes/opened :episode id :crew crew :thread thread :origin origin)
     episode))
 
@@ -298,7 +301,7 @@
                                   :parent-episode (:id open-ep)
                                   :cwd cwd :origin origin :compaction compaction
                                   :seed-compaction seed-compaction})]
-    {:session-key (:id successor)
+    {:session-key thread
      :episode     successor
      :closed      (:episode closed)
      :action      :chained}))
@@ -329,7 +332,7 @@
             ep    (open-episode! (cond-> (assoc opts :fs fs* :root root :crew crew
                                                 :session-store ss)
                                    prior (assoc :parent-episode (:id prior))))]
-        {:session-key (:id ep)
+        {:session-key thread
          :episode     ep
          :action      (if prior :chained :opened)})
 
@@ -582,7 +585,7 @@
         open   (store/find-open-on-thread fs* root crew thread)]
     (cond
       (and open target (not= (:id open) (:id target)))
-      {:session-key (:id open)
+      {:session-key (or thread (:session-id open) (:thread open))
        :episode     open
        :action      :reused}
 

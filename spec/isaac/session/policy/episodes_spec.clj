@@ -33,6 +33,19 @@
     (fs/mkdirs @mem @root)
     (session-store/register-store! @ss))
 
+  (it "answers no default session — naming belongs to the agent, not the policy"
+    (should-be-nil (policy/default-session @pol "cordelia" {:cwd @root :origin {:kind :cli}})))
+
+  (it "keeps the session id it is handed, episode id stays a timestamp"
+    (let [entry (policy/open-session! @pol "harbor-log" {:crew "cordelia" :cwd @root})
+          _     (policy/append-message! @pol "harbor-log" {:role "user" :content "Which way through the reef passage?"})
+          eps   (episode-store/list-episodes @mem @root "cordelia")]
+      (should= "harbor-log" (:id entry))
+      (should= 1 (count eps))
+      (should= "harbor-log" (:session-id (first eps)))
+      (should-not= "harbor-log" (:id (first eps)))
+      (should (re-matches #"\d{17}" (:id (first eps))))))
+
   (it "injects recall on the first user append of a newly opened session"
     (let [called (atom nil)]
       (with-redefs [recall-inject/inject-on-open! (fn [opts] (reset! called opts))]

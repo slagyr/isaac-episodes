@@ -237,8 +237,10 @@
       (store/clear-turn-marker! store session-id)))
   (get-turn-marker [_ session-id] (store/get-turn-marker store session-id))
   (turn-markers [_] (store/turn-markers store))
-  (default-session [_ _crew _opts]
-    (ids/timestamped-id (str (or (memory/now) (java.time.Instant/now)))))
+  ;; No default: episodes never names a session. A start with no id gets its
+  ;; name from the agent's naming strategy, and the policy takes what it is
+  ;; handed. Episode ids stay timestamps; session ids do not.
+  (default-session [_ _crew _opts] nil)
   (repair-transcript! [_ session-id] (store/repair-transcript! store session-id))
   (request-cancel! [_ session-id] (store/request-cancel! store session-id)))
 
