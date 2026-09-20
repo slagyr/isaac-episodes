@@ -132,23 +132,21 @@
              :else
              (recur (rest remaining) current summary spans idx))))))))
 
-(defn- response-text [response]
-  (or (get-in response [:message :content])
-      (:content response)
-      ""))
+(defn- response-text
+  "The reply text. `dispatch-chat-stream` hands back the provider-neutral
+   response contract, so there is exactly one place to look."
+  [response]
+  (or (:content response) ""))
 
 (defn- response-usage
-  "Token counts from a chat response — ollama final-chunk shape first,
-   generic :usage shapes as fallback."
+  "Token counts off the response contract (isaac.llm.api.protocol/usage). The
+   adapter owns the arithmetic and reports :prompt-tokens / :output-tokens;
+   this reads those and nothing else. Spelling guesses here were how a wrong
+   key went unnoticed for three months (isaac-srz1)."
   [response]
-  (let [usage (or (:usage response) {})]
-    {:in  (or (:prompt_eval_count response) (:input-tokens usage)
-              ;; the agent's response contract (isaac-g71i) reports :prompt-tokens;
-              ;; without it the migrate progress line always said "0 in" (isaac-srz1)
-              (:prompt-tokens usage)
-              (:input_tokens usage) (:prompt_tokens usage) 0)
-     :out (or (:eval_count response) (:output-tokens usage)
-              (:output_tokens usage) (:completion_tokens usage) 0)}))
+  (let [usage (:usage response)]
+    {:in  (or (:prompt-tokens usage) 0)
+     :out (or (:output-tokens usage) 0)}))
 
 (defn- sum-usage [a b]
   {:in  (+ (:in a 0) (:in b 0))
@@ -189,13 +187,9 @@
    [:delta :text] chunks."
   [acc* line-buf* chunk]
   (when-not (:done chunk)
-    (let [delta (or (get-in chunk [:message :content])
-                    (get-in chunk [:delta :text])
-                    ;; the agent's stream contract (isaac-g71i) hands the consumer
-                    ;; {:text-delta "..."}; without this the boundary lines never
-                    ;; printed and every gist echo went missing (isaac-srz1)
-                    (:text-delta chunk)
-                    "")]
+    ;; The stream contract hands a consumer {:text-delta "..."} — the adapter
+    ;; has already translated whatever its wire format was. One key, no guesses.
+    (let [delta (or (:text-delta chunk) "")]
       (when (seq delta)
         (swap! acc* str delta)
         (swap! line-buf* str delta)

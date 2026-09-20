@@ -137,30 +137,32 @@
     )
 
   (context "response-usage"
-    (it "reads ollama final-chunk counts"
+
+    (it "reads the response contract's own token keys"
       (should= {:in 25 :out 12}
-               (#'sut/response-usage {:prompt_eval_count 25 :eval_count 12})))
+               (#'sut/response-usage {:usage {:prompt-tokens 25 :output-tokens 12}})))
 
-    (it "reads normalized kebab usage (responses API)"
-      (should= {:in 7 :out 3}
-               (#'sut/response-usage {:usage {:input-tokens 7 :output-tokens 3}})))
-
-    (it "reads snake_case usage shapes"
-      (should= {:in 5 :out 2}
-               (#'sut/response-usage {:usage {:input_tokens 5 :output_tokens 2}}))))
+    (it "counts nothing when the adapter reported no usage"
+      ;; Guessing at other spellings is what hid a wrong key for three months;
+      ;; a provider that does not fill the contract is the provider's bug
+      ;; (isaac-srz1).
+      (should= {:in 0 :out 0} (#'sut/response-usage {}))
+      (should= {:in 0 :out 0} (#'sut/response-usage {:prompt_eval_count 25 :eval_count 12}))))
 
   (context "stream-scene-lines!"
-    (it "accumulates ollama-shaped message content deltas"
+
+    (it "accumulates the stream contract's text deltas"
       (let [acc (atom "") buf (atom "")]
         (with-out-str
-          (#'sut/stream-scene-lines! acc buf {:message {:content "1-2: topic\n"}}))
+          (#'sut/stream-scene-lines! acc buf {:text-delta "1-2: topic\n"}))
         (should= "1-2: topic\n" @acc)))
 
-    (it "accumulates responses-API delta text chunks"
+    (it "ignores raw provider chunk shapes — the adapter translates, not this"
       (let [acc (atom "") buf (atom "")]
         (with-out-str
+          (#'sut/stream-scene-lines! acc buf {:message {:content "1-2: topic\n"}})
           (#'sut/stream-scene-lines! acc buf {:delta {:text "1-2: topic\n"}}))
-        (should= "1-2: topic\n" @acc))))
+        (should= "" @acc))))
 
   (context "segment-span!"
     (before
