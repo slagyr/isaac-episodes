@@ -143,6 +143,9 @@
   [response]
   (let [usage (or (:usage response) {})]
     {:in  (or (:prompt_eval_count response) (:input-tokens usage)
+              ;; the agent's response contract (isaac-g71i) reports :prompt-tokens;
+              ;; without it the migrate progress line always said "0 in" (isaac-srz1)
+              (:prompt-tokens usage)
               (:input_tokens usage) (:prompt_tokens usage) 0)
      :out (or (:eval_count response) (:output-tokens usage)
               (:output_tokens usage) (:completion_tokens usage) 0)}))
@@ -188,6 +191,10 @@
   (when-not (:done chunk)
     (let [delta (or (get-in chunk [:message :content])
                     (get-in chunk [:delta :text])
+                    ;; the agent's stream contract (isaac-g71i) hands the consumer
+                    ;; {:text-delta "..."}; without this the boundary lines never
+                    ;; printed and every gist echo went missing (isaac-srz1)
+                    (:text-delta chunk)
                     "")]
       (when (seq delta)
         (swap! acc* str delta)

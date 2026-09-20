@@ -23,7 +23,8 @@ Feature: Idle sealing — a quiet thread becomes recallable within minutes
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:episodes {:gist-model :gist
+      {:defaults {:crew "cordelia"}
+       :episodes {:gist-model :gist
                   :embedding {:api "grover" :model "mini-embed"}}}
       """
 

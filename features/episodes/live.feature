@@ -82,7 +82,8 @@ Feature: Episodes — live (policy + lifecycle)
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:episodes {:gist-model :gist}}
+      {:defaults {:crew "cordelia"}
+       :episodes {:gist-model :gist}}
       """
     And the current time is "2026-03-01T10:00:00"
     And the following model responses are queued:
@@ -121,7 +122,8 @@ Feature: Episodes — live (policy + lifecycle)
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:episodes {:gist-model :gist}}
+      {:defaults {:crew "cordelia"}
+       :episodes {:gist-model :gist}}
       """
     And the current time is "2026-03-01T10:00:00"
     And the following model responses are queued:
@@ -162,7 +164,8 @@ Feature: Episodes — live (policy + lifecycle)
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:episodes {:gist-model :gist}}
+      {:defaults {:crew "cordelia"}
+       :episodes {:gist-model :gist}}
       """
     And crew "cordelia" has an open episode on thread "reef-chat" with:
       | compaction.head   | 0.1 |
@@ -205,7 +208,8 @@ Feature: Episodes — live (policy + lifecycle)
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:episodes {:gist-model :gist}}
+      {:defaults {:crew "cordelia"}
+       :episodes {:gist-model :gist}}
       """
     And the current time is "2026-03-01T10:00:00"
     And the following model responses are queued:
@@ -256,7 +260,8 @@ Feature: Episodes — live (policy + lifecycle)
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:episodes {:gist-model :gist}}
+      {:defaults {:crew "cordelia"}
+       :episodes {:gist-model :gist}}
       """
     And the current time is "2026-03-01T10:00:00"
     And the following model responses are queued:
@@ -285,7 +290,8 @@ Feature: Episodes — live (policy + lifecycle)
       | session-policy | episodes         |
     And config file "isaac.edn" containing:
       """
-      {:episodes {:embedding {:api "grover" :model "mini-embed"}}}
+      {:defaults {:crew "cordelia"}
+       :episodes {:embedding {:api "grover" :model "mini-embed"}}}
       """
     And crew "cordelia" has a closed episode "2026-03-01-1000-ab12" with scenes:
       | id                   | started-at          | ended-at            | gist                      | text                                    |
@@ -314,7 +320,8 @@ Feature: Episodes — live (policy + lifecycle)
       | session-policy | episodes         |
     And config file "isaac.edn" containing:
       """
-      {:episodes {:embedding {:api "grover" :model "mini-embed" :floor-cos 0.999}}}
+      {:defaults {:crew "cordelia"}
+       :episodes {:embedding {:api "grover" :model "mini-embed" :floor-cos 0.999}}}
       """
     And crew "cordelia" has a closed episode "2026-03-01-1000-ab12" with scenes:
       | id                   | started-at          | ended-at            | gist                      | text                                    |
@@ -343,7 +350,8 @@ Feature: Episodes — live (policy + lifecycle)
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:episodes {:embedding {:api "grover" :model "mini-embed"}
+      {:defaults {:crew "cordelia"}
+       :episodes {:embedding {:api "grover" :model "mini-embed"}
                    :gist-model :gist}}
       """
     And the current time is "2026-03-01T10:00:00"
@@ -382,7 +390,8 @@ Feature: Episodes — live (policy + lifecycle)
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:episodes {:embedding {:api "grover" :model "mini-embed"}
+      {:defaults {:crew "cordelia"}
+       :episodes {:embedding {:api "grover" :model "mini-embed"}
                    :gist-model :gist}}
       """
     And the following model responses are queued:
@@ -413,7 +422,8 @@ Feature: Episodes — live (policy + lifecycle)
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:episodes {:gist-model :gist}}
+      {:defaults {:crew "cordelia"}
+       :episodes {:gist-model :gist}}
       """
     And the following model responses are queued:
       | type | content                        | model |
@@ -427,7 +437,8 @@ Feature: Episodes — live (policy + lifecycle)
     And no index exists for crew "cordelia"
     Given config file "isaac.edn" containing:
       """
-      {:episodes {:embedding {:api "grover" :model "mini-embed"}
+      {:defaults {:crew "cordelia"}
+       :episodes {:embedding {:api "grover" :model "mini-embed"}
                    :gist-model :gist}}
       """
     When isaac is run with "episodes index --crew cordelia"
@@ -448,7 +459,8 @@ Feature: Episodes — live (policy + lifecycle)
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:episodes {:embedding {:api "grover" :model "mini-embed"}
+      {:defaults {:crew "cordelia"}
+       :episodes {:embedding {:api "grover" :model "mini-embed"}
                   :gist-model :gist
                   :seal {:size-cap 4}}}
       """
@@ -487,7 +499,8 @@ Feature: Episodes — live (policy + lifecycle)
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:episodes {:embedding {:api "grover" :model "mini-embed"}
+      {:defaults {:crew "cordelia"}
+       :episodes {:embedding {:api "grover" :model "mini-embed"}
                   :gist-model :gist
                   :seal {:drift-threshold 0.999 :min-tail 2}}}
       """
@@ -519,7 +532,8 @@ Feature: Episodes — live (policy + lifecycle)
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:episodes {:embedding {:api "grover" :model "mini-embed"}
+      {:defaults {:crew "cordelia"}
+       :episodes {:embedding {:api "grover" :model "mini-embed"}
                   :gist-model :gist
                   :seal {:drift-threshold 0.999 :min-tail 2}}}
       """
@@ -549,7 +563,8 @@ Feature: Episodes — live (policy + lifecycle)
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:episodes {:embedding {:api "grover" :model "mini-embed"}
+      {:defaults {:crew "cordelia"}
+       :episodes {:embedding {:api "grover" :model "mini-embed"}
                   :gist-model :gist
                   :seal {:size-cap 8}}}
       """
@@ -587,7 +602,8 @@ Feature: Episodes — live (policy + lifecycle)
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:episodes {:gist-model :gist
+      {:defaults {:crew "cordelia"}
+       :episodes {:gist-model :gist
                   :seal {:size-cap 4 :drift-threshold 0.999 :min-tail 2}}}
       """
     And the current time is "2026-03-01T10:00:00"
@@ -633,7 +649,8 @@ Feature: Episodes — live (policy + lifecycle)
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:episodes {:gist-model :gist}}
+      {:defaults {:crew "cordelia"}
+       :episodes {:gist-model :gist}}
       """
     And crew "cordelia" has an open episode on thread "lantern-room" with:
       | compaction.head   | 0.1 |

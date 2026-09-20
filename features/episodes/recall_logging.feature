@@ -14,7 +14,8 @@ Feature: Recall is visible in the logs
       | session-policy | episodes         |
     And config file "isaac.edn" containing:
       """
-      {:episodes {:embedding {:api "grover" :model "mini-embed"}}}
+      {:defaults {:crew "cordelia"}
+       :episodes {:embedding {:api "grover" :model "mini-embed"}}}
       """
     And crew "cordelia" has a closed episode "2026-03-01-1000-ab12" with scenes:
       | id                   | started-at          | ended-at            | gist                      | text                                    |
