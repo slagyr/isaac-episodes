@@ -68,7 +68,7 @@ Feature: Episodes storage layout — one directory per session under sessions/<c
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:defaults {:crew "cordelia"}
+      {:defaults {:frequencies {:crew "cordelia"}}
        :episodes {:gist-model :gist}}
       """
     And the following sessions exist:
@@ -218,7 +218,7 @@ Feature: Episodes storage layout — one directory per session under sessions/<c
   Scenario: the recall index locates a scene by session id, episode id, and scene id
     Given config file "isaac.edn" containing:
       """
-      {:defaults {:crew "cordelia"}
+      {:defaults {:frequencies {:crew "cordelia"}}
        :episodes {:embedding {:api "grover" :model "mini-embed"}}}
       """
     And the isaac EDN file "config/crew/cordelia.edn" exists with:
@@ -248,7 +248,7 @@ Feature: Episodes storage layout — one directory per session under sessions/<c
   Scenario: migrate-layout moves every session under its crew, folds a legacy episode into its session, rebuilds both indexes, and is a no-op the second time
     Given config file "isaac.edn" containing:
       """
-      {:defaults {:crew "cordelia"}
+      {:defaults {:frequencies {:crew "cordelia"}}
        :episodes {:embedding {:api "grover" :model "mini-embed"}}}
       """
     And the isaac EDN file "config/crew/cordelia.edn" exists with:

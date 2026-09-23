@@ -13,7 +13,7 @@ Feature: Episode provider attention
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:defaults {:crew "cordelia"}
+      {:defaults {:frequencies {:crew "cordelia"}}
        :episodes {:gist-model :gist
                   :embedding {:api "grover" :model "mini-embed"}}
        :attention {:notify {:comm "discord" :target "boiler-room"}}}

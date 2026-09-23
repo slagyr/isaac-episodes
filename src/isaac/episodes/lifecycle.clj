@@ -2,6 +2,7 @@
   "Open/close live episodes and route a THREAD handle to the backing session."
   (:require
     [clojure.string :as str]
+    [isaac.config.defaults :as defaults]
     [isaac.config.loader :as loader]
     [isaac.config.resolve :as resolve]
     [isaac.episodes.distill :as distill]
@@ -121,7 +122,7 @@
     (let [gist-ref (get-in cfg [:episodes :gist-model])
           model-id (or model
                        (when gist-ref (if (keyword? gist-ref) (name gist-ref) (str gist-ref)))
-                       (get-in cfg [:defaults :model]))
+                       (defaults/model-id cfg))
           ctx (when model-id
                 (try
                   (resolve/resolve-crew-context cfg "main" {:model-override model-id})
@@ -238,7 +239,7 @@
       (delete-empty-episode! fs* root crew episode-id ss)
 
       (nil? provider)
-      {:exit 1 :status :error :message "no gist model/provider resolved — set :episodes {:gist-model ...} or :defaults :model"}
+      {:exit 1 :status :error :message "no gist model/provider resolved — set :episodes {:gist-model ...} or :defaults :crew :model"}
 
       :else
       (let [_ (when-not (:migrated-from existing)

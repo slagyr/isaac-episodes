@@ -2,6 +2,7 @@
   "Crew tools :recall/search and :recall/scene (wire recall__search / recall__scene)."
   (:require
     [clojure.string :as str]
+    [isaac.config.defaults :as config-defaults]
     [isaac.config.loader :as loader]
     [isaac.episodes.store :as store]
     [isaac.fs :as fs]
@@ -24,7 +25,7 @@
         session-key (get args "session_key")]
     (or (get args "crew")
         (some->> session-key (session-store/get-session (bounds/session-store args)) :crew)
-        (get-in (loader/snapshot "recall tools: default crew") [:defaults :crew])
+        (config-defaults/crew-id (loader/snapshot "recall tools: default crew"))
         "main")))
 
 (defn- current-episode-id [args crew]

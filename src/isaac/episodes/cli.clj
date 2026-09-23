@@ -6,6 +6,7 @@
     [isaac.agent.config.runtime :as runtime]
     [isaac.cli.api :as cli-api]
     [isaac.cli.host :as host]
+    [isaac.config.defaults :as config-defaults]
     [isaac.config.loader :as loader]
     [isaac.config.root :as root]
     [isaac.episodes.layout :as layout]
@@ -83,7 +84,8 @@
              "(<root>/episodes/<crew>/index.edn + vectors.bin)."
              ""
              "Options:"
-             "  --crew CREW  Crew to index (defaults to :defaults :crew, else all crews)"
+             "  --crew CREW  Crew to index (defaults to :defaults :frequencies :crew,"
+             "               else all crews)"
              "  --rebuild    Drop existing rows and re-embed everything"
              "  -h, --help   Show help"]))
 
@@ -96,7 +98,7 @@
       (str n " new rows"))))
 
 (defn- default-crew [cfg]
-  (get-in cfg [:defaults :crew]))
+  (config-defaults/crew-id cfg))
 
 (defn- list-crews [fs* root]
   (let [dir (str root "/episodes")]

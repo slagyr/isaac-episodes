@@ -22,7 +22,7 @@ Feature: Episodes — migrate-session
       | session-policy | episodes         |
     And config file "isaac.edn" containing:
       """
-      {:defaults {:crew "cordelia"}}
+      {:defaults {:frequencies {:crew "cordelia"}}}
       """
 
   # ----- Help -----
@@ -48,7 +48,7 @@ Feature: Episodes — migrate-session
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:defaults {:crew "cordelia"}
+      {:defaults {:frequencies {:crew "cordelia"}}
        :episodes {:gist-model :gist}}
       """
     And the following sessions exist:
@@ -89,7 +89,7 @@ Feature: Episodes — migrate-session
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:defaults {:crew "cordelia"}
+      {:defaults {:frequencies {:crew "cordelia"}}
        :episodes {:gist-model :gist}}
       """
     And the following sessions exist:
@@ -121,7 +121,7 @@ Feature: Episodes — migrate-session
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:defaults {:crew "cordelia"}
+      {:defaults {:frequencies {:crew "cordelia"}}
        :episodes {:gist-model :gist}}
       """
     And the following sessions exist:
@@ -155,7 +155,7 @@ Feature: Episodes — migrate-session
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:defaults {:crew "cordelia"}
+      {:defaults {:frequencies {:crew "cordelia"}}
        :episodes {:gist-model :gist}}
       """
     And the following sessions exist:
@@ -191,7 +191,7 @@ Feature: Episodes — migrate-session
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:defaults {:crew "cordelia"}
+      {:defaults {:frequencies {:crew "cordelia"}}
        :episodes {:gist-model :gist}}
       """
     And the following sessions exist:
@@ -229,7 +229,7 @@ Feature: Episodes — migrate-session
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:defaults {:crew "cordelia"}
+      {:defaults {:frequencies {:crew "cordelia"}}
        :episodes {:gist-model :gist}}
       """
     And the following sessions exist:
@@ -285,7 +285,7 @@ Feature: Episodes — migrate-session
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:defaults {:crew "cordelia"}
+      {:defaults {:frequencies {:crew "cordelia"}}
        :episodes {:gist-model :gist}}
       """
     And the following sessions exist:
@@ -325,7 +325,7 @@ Feature: Episodes — migrate-session
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:defaults {:crew "cordelia"}
+      {:defaults {:frequencies {:crew "cordelia"}}
        :episodes {:gist-model :gist}}
       """
     And the following sessions exist:
@@ -354,7 +354,7 @@ Feature: Episodes — migrate-session
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:defaults {:crew "cordelia"}
+      {:defaults {:frequencies {:crew "cordelia"}}
        :episodes {:gist-model :gist}}
       """
     And the following sessions exist:
@@ -385,7 +385,7 @@ Feature: Episodes — migrate-session
       | provider | grover |
     And config file "isaac.edn" containing:
       """
-      {:defaults {:crew "cordelia"}
+      {:defaults {:frequencies {:crew "cordelia"}}
        :episodes {:gist-model :gist}}
       """
     And the following sessions exist:

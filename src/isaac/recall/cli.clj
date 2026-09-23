@@ -6,6 +6,7 @@
     [isaac.agent.config.runtime :as runtime]
     [isaac.cli.api :as cli-api]
     [isaac.cli.host :as host]
+    [isaac.config.defaults :as config-defaults]
     [isaac.config.loader :as loader]
     [isaac.config.root :as root]
     [isaac.fs :as fs]
@@ -114,7 +115,7 @@
       (try
         (let [{:keys [root fs cfg]} (install! opts)
               crew (or (:crew options)
-                       (get-in cfg [:defaults :crew])
+                       (config-defaults/crew-id cfg)
                        "main")
               q    (str/join " " arguments)
               result (query/query fs root crew q cfg

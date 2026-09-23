@@ -1,6 +1,7 @@
 (ns isaac.episodes.migrate
   "Materialize a session transcript as a closed episode (scenes + gists)."
   (:require
+    [isaac.config.defaults :as defaults]
     [isaac.config.resolve :as resolve]
     [isaac.episodes.distill :as distill]
     [isaac.episodes.ids :as ids]
@@ -89,7 +90,7 @@
         gist-ref (get-in cfg [:episodes :gist-model])
         model-id (or (when gist-ref
                        (if (keyword? gist-ref) (name gist-ref) (str gist-ref)))
-                     (get-in cfg [:defaults :model]))
+                     (defaults/model-id cfg))
         ctx (when model-id
               (try
                 (resolve/resolve-crew-context cfg "main" {:model-override model-id})
@@ -259,7 +260,7 @@
             {:keys [provider model]} (resolve-gist-model cfg)
             provider (provider-with-root provider root)]
         (if-not provider
-          {:exit 1 :status :error :message "no gist model/provider resolved — set :episodes {:gist-model ...} or :defaults :model"}
+          {:exit 1 :status :error :message "no gist model/provider resolved — set :episodes {:gist-model ...} or :defaults :crew :model"}
           (migrate-session!
             {:fs fs :root root :session session :transcript transcript
              :provider provider :model model :force? force?}))))))
