@@ -36,6 +36,22 @@
   (it "answers no default session — naming belongs to the agent, not the policy"
     (should-be-nil (policy/default-session @pol "cordelia" {:cwd @root :origin {:kind :cli}})))
 
+  (it "refuses to open a blank or nil session name instead of silently resolving to a stray session"
+    (should-throw clojure.lang.ExceptionInfo
+      (policy/open-session! @pol nil {:crew "cordelia" :cwd @root}))
+    (should-throw clojure.lang.ExceptionInfo
+      (policy/open-session! @pol "" {:crew "cordelia" :cwd @root})))
+
+  (it "refuses to reopen a session id that already belongs to another crew"
+    (policy/open-session! @pol "harbor-log" {:crew "cordelia" :cwd @root})
+    (should-throw clojure.lang.ExceptionInfo
+      (policy/open-session! @pol "harbor-log" {:crew "marvin" :cwd @root})))
+
+  (it "still reopens the same session for the same crew (warm reopen is not a collision)"
+    (let [first  (policy/open-session! @pol "harbor-log" {:crew "cordelia" :cwd @root})
+          second (policy/open-session! @pol "harbor-log" {:crew "cordelia" :cwd @root})]
+      (should= (:id first) (:id second))))
+
   (it "keeps the session id it is handed, episode id stays a timestamp"
     (let [entry (policy/open-session! @pol "harbor-log" {:crew "cordelia" :cwd @root})
           _     (policy/append-message! @pol "harbor-log" {:role "user" :content "Which way through the reef passage?"})

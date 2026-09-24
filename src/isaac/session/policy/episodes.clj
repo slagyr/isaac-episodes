@@ -3,6 +3,7 @@
    (recall injected ahead of the message), sealed on clear-turn-marker!,
    closed and chained on compaction. Session ids never change."
   (:require
+    [clojure.string :as str]
     [isaac.config.loader :as loader]
     [isaac.episodes.ids :as ids]
     [isaac.episodes.lifecycle :as lifecycle]
@@ -29,6 +30,12 @@
 
 (defn- session-id* [name]
   (str name))
+
+(defn- blank-name? [name]
+  (or (nil? name) (and (string? name) (str/blank? name))))
+
+(defn- crew->str [crew]
+  (when crew (if (keyword? crew) (clojure.core/name crew) (str crew))))
 
 (defn- episode-session-id [episode]
   (or (:session-id episode) (:thread episode)))
@@ -180,9 +187,19 @@
 (deftype EpisodesPolicy [store]
   policy/SessionPolicy
   (open-session! [_ name opts]
-    (let [session-id (session-id* name)]
-      (or (store/get-session store session-id)
-          (store/open-session! store session-id (merge {:session-policy :episodes} opts)))))
+    (when (blank-name? name)
+      (throw (ex-info "isaac.session.policy.episodes/open-session!: session name required (blank/nil name refused, not silently resolved — isaac-j95x)"
+                      {:reason :blank-session-name})))
+    (let [session-id (session-id* name)
+          existing   (store/get-session store session-id)
+          want-crew  (crew->str (:crew opts))
+          have-crew  (when existing (crew->str (:crew existing)))]
+      (if existing
+        (if (and want-crew have-crew (not= want-crew have-crew))
+          (throw (ex-info (str "session " session-id " belongs to crew " have-crew ", not " want-crew)
+                          {:reason :crew-collision :id session-id :crew have-crew :wanted-crew want-crew}))
+          existing)
+        (store/open-session! store session-id (merge {:session-policy :episodes} opts)))))
   (delete-session! [_ name] (store/delete-session! store name))
   (rename-session! [_ old-name new-name] (store/rename-session! store old-name new-name))
   (list-sessions [_] (store/list-sessions store))
