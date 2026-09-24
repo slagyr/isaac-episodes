@@ -3,6 +3,7 @@
   (:require
     [clojure.string :as str]
     [isaac.config.loader :as loader]
+    [isaac.episodes.crew :as episode-crew]
     [isaac.episodes.store :as store]
     [isaac.fs :as fs]
     [isaac.logger :as log]
@@ -224,7 +225,7 @@
     :else
     (let [fs*     (or fs (fs/instance))
           root    (or root (loader/root))
-          crew    (or crew (:crew episode) "main")
+          crew    (episode-crew/resolve-id (or crew (:crew episode)))
           eid     (:id episode)
           thread  (or (:thread episode) (:session-id episode))
           backing (or (when (and session-store (:session-id episode)

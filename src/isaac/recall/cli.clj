@@ -115,8 +115,7 @@
       (try
         (let [{:keys [root fs cfg]} (install! opts)
               crew (or (:crew options)
-                       (config-defaults/crew-id cfg)
-                       "main")
+                       (config-defaults/crew-id cfg))
               q    (str/join " " arguments)
               result (query/query fs root crew q cfg
                                   (cond-> {:now       (memory/now)

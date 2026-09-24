@@ -25,8 +25,7 @@
         session-key (get args "session_key")]
     (or (get args "crew")
         (some->> session-key (session-store/get-session (bounds/session-store args)) :crew)
-        (config-defaults/crew-id (loader/snapshot "recall tools: default crew"))
-        "main")))
+        (config-defaults/crew-id (loader/snapshot "recall tools: default crew")))))
 
 (defn- current-episode-id [args crew]
   (let [session-key (arg args "session_key")

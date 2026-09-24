@@ -5,6 +5,7 @@
     [isaac.config.defaults :as defaults]
     [isaac.config.loader :as loader]
     [isaac.config.resolve :as resolve]
+    [isaac.episodes.crew :as episode-crew]
     [isaac.episodes.distill :as distill]
     [isaac.episodes.ids :as ids]
     [isaac.episodes.migrate :as migrate]
@@ -125,7 +126,7 @@
                        (defaults/model-id cfg))
           ctx (when model-id
                 (try
-                  (resolve/resolve-crew-context cfg "main" {:model-override model-id})
+                  (resolve/resolve-crew-context cfg (defaults/crew-id cfg) {:model-override model-id})
                   (catch Exception _
                     nil)))
           provider* (or provider (:provider ctx))
@@ -145,7 +146,7 @@
   (let [fs*     (runtime-fs fs)
         root    (runtime-root root)
         ss      (runtime-store session-store)
-        crew    (or crew "main")
+        crew    (episode-crew/resolve-id crew)
         id      (ids/timestamped-id (str (now-instant)))
         episode (cond-> {:id         id
                          :crew       crew
@@ -219,7 +220,7 @@
   (let [fs*     (runtime-fs fs)
         root    (runtime-root root)
         ss      (runtime-store session-store)
-        crew    (or crew "main")
+        crew    (episode-crew/resolve-id crew cfg)
         existing (store/read-episode fs* root crew episode-id)
         backing  (backing-session-id ss existing)
         session  (when ss (session-store/get-session ss backing))
@@ -275,7 +276,7 @@
   [{:keys [fs root crew session-store provider model cfg] :as opts}]
   (let [fs*  (runtime-fs fs)
         root (runtime-root root)
-        crew (or crew "main")
+        crew (episode-crew/resolve-id crew cfg)
         open (->> (store/list-episodes fs* root crew)
                   (filter #(= :open (:status %))))
         results (mapv (fn [ep]
@@ -324,7 +325,7 @@
   (let [fs*  (runtime-fs fs)
         root (runtime-root root)
         ss   (runtime-store session-store)
-        crew (or crew "main")
+        crew (episode-crew/resolve-id crew cfg)
         ttl  (ttl-minutes cfg)
         open (store/find-open-on-thread fs* root crew thread)]
     (cond
@@ -445,7 +446,7 @@
   (let [fs*  (runtime-fs fs)
         root (runtime-root root)
         ss   (runtime-store session-store)
-        crew (or crew "main")
+        crew (episode-crew/resolve-id crew cfg)
         cfg  (or cfg {})
         existing (when (and root episode-id)
                    (store/read-episode fs* root crew episode-id))]
@@ -536,7 +537,7 @@
   (let [fs*      (runtime-fs fs)
         root     (runtime-root root)
         ss       (runtime-store session-store)
-        crew     (or crew "main")
+        crew     (episode-crew/resolve-id crew cfg)
         existing (when (and root episode-id)
                    (store/read-episode fs* root crew episode-id))]
     (cond
@@ -580,7 +581,7 @@
   (let [fs*  (runtime-fs fs)
         root (runtime-root root)
         ss   (runtime-store session-store)
-        crew (or crew "main")
+        crew (episode-crew/resolve-id crew cfg)
         target (when-let [id (:episode-id opts)]
                  (store/read-episode fs* root crew id))
         open   (store/find-open-on-thread fs* root crew thread)]

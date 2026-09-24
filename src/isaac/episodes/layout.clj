@@ -6,6 +6,7 @@
     [cheshire.core :as json]
     [clojure.edn :as edn]
     [clojure.string :as str]
+    [isaac.episodes.crew :as episode-crew]
     [isaac.episodes.store :as store]
     [isaac.fs :as fs]
     [isaac.recall.index :as recall-index]
@@ -49,7 +50,7 @@
                        (let [entry (keywordize (read-edn fs* edn))]
                          {:id   (or (:id entry) name)
                           :dir  sdir
-                          :crew (or (:crew entry) "main")
+                          :crew (episode-crew/resolve-id (:crew entry))
                           :entry entry})))))
            vec))))
 

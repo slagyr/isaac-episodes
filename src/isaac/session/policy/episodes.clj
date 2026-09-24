@@ -5,6 +5,7 @@
   (:require
     [clojure.string :as str]
     [isaac.config.loader :as loader]
+    [isaac.episodes.crew :as episode-crew]
     [isaac.episodes.ids :as ids]
     [isaac.episodes.lifecycle :as lifecycle]
     [isaac.episodes.store :as episode-store]
@@ -62,7 +63,7 @@
   [{:keys [store crew session-id parent-episode cwd origin compaction seed-compaction cfg]}]
   (let [fs*     (runtime-fs)
         root    (runtime-root)
-        crew    (or crew "main")
+        crew    (episode-crew/resolve-id crew cfg)
         id      (ids/timestamped-id (str (or (memory/now) (java.time.Instant/now))))
         episode (cond-> {:id         id
                          :crew       crew
@@ -99,7 +100,7 @@
   [{:keys [store crew session-id] :as opts}]
   (let [fs*        (runtime-fs)
         root       (runtime-root)
-        crew       (or crew "main")
+        crew       (episode-crew/resolve-id crew)
         open       (find-open fs* root crew session-id)
         ttl        (lifecycle/ttl-minutes (runtime-cfg))
         transcript (when (and store session-id)
@@ -131,7 +132,7 @@
 (defn- crew-of [store session-id fallback]
   (or fallback
       (when store (:crew (store/get-session store session-id)))
-      "main"))
+      (episode-crew/resolve-id nil)))
 
 (defn- compact-chain!
   "Close the open episode (if any) against the pre-splice transcript, splice

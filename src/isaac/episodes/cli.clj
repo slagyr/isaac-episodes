@@ -143,8 +143,7 @@
   (try
     (let [{:keys [root fs cfg]} (install! opts)
           crew* (or (when-not (str/blank? crew) crew)
-                    (default-crew cfg)
-                    "main")
+                    (default-crew cfg))
           eps   (store/list-episodes fs root crew*)]
       (doseq [ep eps]
         (println (format-list-row ep)))
@@ -174,8 +173,7 @@
   (try
     (let [{:keys [root fs cfg store]} (install! opts)
           crew*  (or (when-not (str/blank? crew) crew)
-                     (default-crew cfg)
-                     "main")
+                     (default-crew cfg))
           result (lifecycle/close-open-episodes!
                    {:fs fs :root root :crew crew* :session-store store :cfg cfg})
           results (or (:results result) [])

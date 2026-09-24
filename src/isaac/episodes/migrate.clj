@@ -3,6 +3,7 @@
   (:require
     [isaac.config.defaults :as defaults]
     [isaac.config.resolve :as resolve]
+    [isaac.episodes.crew :as episode-crew]
     [isaac.episodes.distill :as distill]
     [isaac.episodes.ids :as ids]
     [isaac.episodes.segment :as segment]
@@ -93,10 +94,10 @@
                      (defaults/model-id cfg))
         ctx (when model-id
               (try
-                (resolve/resolve-crew-context cfg "main" {:model-override model-id})
+                (resolve/resolve-crew-context cfg (defaults/crew-id cfg) {:model-override model-id})
                 (catch Exception _
-                  (resolve/resolve-crew-context cfg "main"))))
-        ctx (or ctx (resolve/resolve-crew-context cfg "main"))]
+                  (resolve/resolve-crew-context cfg (defaults/crew-id cfg)))))
+        ctx (or ctx (resolve/resolve-crew-context cfg (defaults/crew-id cfg)))]
     {:provider (:provider ctx)
      :model    (or (:model ctx) model-id "gist")
      :model-id model-id}))
@@ -123,7 +124,7 @@
             :episode ... :message ...}"
   [{:keys [fs root session transcript provider model force? size-cap episode-id]
     :or {force? false}}]
-  (let [crew (or (:crew session) "main")
+  (let [crew (episode-crew/resolve-id (:crew session))
         session-id (or (:id session) (:key session))
         existing (or (when episode-id (store/read-episode fs root crew episode-id))
                      (store/find-by-migrated-from fs root crew session-id))
