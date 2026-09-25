@@ -8,6 +8,7 @@
     [isaac.fs :as fs]
     [isaac.logger :as log]
     [isaac.recall.index :as index]
+    [isaac.recall.ledger :as ledger]
     [isaac.recall.query :as query]
     [isaac.recall.score :as score]
     [isaac.session.store.spi :as session-store]
@@ -150,7 +151,7 @@
 
 (defn- search-result [fs* root crew query cfg]
   (try
-    (query/query fs* root crew query cfg {:top SEARCH_SHORTLIST})
+    (query/query fs* root crew query cfg {:top ledger/CANDIDATE_LIMIT})
     (catch Exception e
       (log/warn :recall/skipped :reason :embed-failed :error (.getMessage e))
       {:error :embed-failed :message (.getMessage e)})))
@@ -258,6 +259,11 @@
       (when (seq found)
         (append-block! session-store backing (render-search-block search))
         (record-refs! fs* root crew eid found query))
+      (ledger/append! fs* root crew cfg
+                      {:kind :inject :session (or (:session-id episode) thread backing)
+                       :thread thread :lineage (mapv :id thread-gists)
+                       :query query :floor floor :top SEARCH_SHORTLIST :hits raw-hits
+                       :injected (mapv #(or (:id %) (:scene-id %)) (concat thread-gists found))})
       (log-recall-outcome!
         {:crew        crew
          :episode     eid

@@ -15,6 +15,7 @@
     [isaac.module.loader :as module-loader]
     [isaac.nexus :as nexus]
     [isaac.recall.index :as recall-index]
+    [isaac.recall.ledger :as ledger]
     [isaac.recall.score :as score]
     [isaac.session.context :as session-ctx]
     [isaac.session.session-steps :as session-steps]
@@ -614,3 +615,28 @@
 (defgiven "crew {crew:string} has an open episode on thread {thread:string} with:"
   isaac.episodes.episode-steps/crew-has-open-episode-on-thread-with
   "Writes an :open episode record + backing session with optional compaction.head.")
+
+(defn crew-recall-ledger-matches [crew table]
+  (when (g/get :turn-future)
+    (session-steps/await-turn!))
+  (with-feature-fs
+    (fn []
+      (let [path (ledger/path (root-dir) crew)
+            _ (g/should (fs/exists? (mem-fs) path))
+            entries (mapv edn/read-string (str/split-lines (fs/slurp (mem-fs) path)))]
+        (doseq [row (:rows table)]
+          (let [expected (zipmap (:headers table) row)]
+            (g/should
+              (boolean
+                (some (fn [entry]
+                        (every? (fn [[k v]]
+                                  (let [actual (get entry (keyword k))]
+                                    (if (= k "injected")
+                                      (some #(cell-matches? v %) actual)
+                                      (if (= k "kind") (= v (str actual)) (cell-matches? v actual)))))
+                                expected))
+                      entries)))))))))
+
+(defthen "the crew {crew:string} recall ledger has entries matching:"
+  isaac.episodes.episode-steps/crew-recall-ledger-matches
+  "Reads the crew's on-disk EDN-lines recall ledger and matches every expected row.")

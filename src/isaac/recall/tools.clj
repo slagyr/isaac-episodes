@@ -8,6 +8,7 @@
     [isaac.fs :as fs]
     [isaac.logger :as log]
     [isaac.recall.inject :as inject]
+    [isaac.recall.ledger :as ledger]
     [isaac.recall.query :as query]
     [isaac.recall.score :as score]
     [isaac.session.store.spi :as session-store]
@@ -64,13 +65,13 @@
     (if (str/blank? q)
       {:isError true :error "query is required"}
       (let [result (try
-                     (query/query fs* root crew q cfg {:top 8})
+                     (query/query fs* root crew q cfg {:top ledger/CANDIDATE_LIMIT})
                      (catch Exception e
                        {:error :embed-failed :message (.getMessage e)}))]
         (if (:error result)
           {:isError true :error (or (:message result) (name (:error result)))}
           (let [floor  (score/resolve-floor cfg {})
-                hits   (inject/passing-hits (:hits result) floor)
+                hits   (-> (inject/passing-hits (:hits result) floor) (->> (take 8) vec))
                 scenes (mapv (fn [h]
                                (let [s (or (store/read-scene fs* root crew (:episode-id h) (:scene-id h))
                                            {:id (:scene-id h) :gist (:gist-text h)})]
@@ -81,6 +82,11 @@
                 top    (when (seq hits)
                          (apply max (map hit-best-cos hits)))]
             (record! args scenes q)
+            (ledger/append! fs* root crew cfg
+                            {:kind :search :session (arg args "session_key")
+                             :thread (arg args "session_key") :lineage []
+                             :query q :floor floor :top 8 :hits (:hits result)
+                             :injected []})
             (log/info :recall/search
                       :crew crew
                       :query-chars (count (str q))

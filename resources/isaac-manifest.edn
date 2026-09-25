@@ -59,7 +59,8 @@
                                                         :min-tail {:type :int}
                                                         :idle-minutes {:type :int}}}}}}
   :recall {:schema {:name :recall :type :map :description "Recall scoring and injection settings"
-                    :schema {:half-life {:type :int}
+                    :schema {:ledger {:type :boolean}
+                            :half-life {:type :int}
                              :weights {:type :map :schema {:text {:type :double}
                                                           :gist {:type :double}
                                                           :lex {:type :double}
