@@ -1,4 +1,3 @@
-@wip
 Feature: Episode crews are granted the recall tools
   An episodes crew receives recall__search and recall__scene whether or not
   its allow list names them. A crew that denies :recall/* does not receive

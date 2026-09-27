@@ -1,9 +1,14 @@
 (ns isaac.episodes.module-spec
   (:require
     [clojure.edn :as edn]
+    [isaac.episodes.tools :as tools]
     [speclj.core :refer :all]))
 
 (describe "episodes module manifest"
+  (it "retains runtime session context for recall handlers"
+    (should= true (:builtin? (tools/search-tool-factory {})))
+    (should= true (:builtin? (tools/scene-tool-factory {}))))
+
   (it "contributes episodes policy, tools, CLIs, and embedding APIs"
     (let [manifest (edn/read-string (slurp "resources/isaac-manifest.edn"))]
       (should (contains? (:isaac.agent/session-policy manifest) :episodes))
