@@ -105,7 +105,7 @@ Feature: Episodes — live (policy + lifecycle)
     And the episodes for crew "cordelia" on thread "reef-chat" chain by lineage
     And that episode's backing session has transcript matching:
       | type    | message.role | message.content        |
-      | message | user         | Set the watch rotation |
+      | message | user         | #"(?s).*Set the watch rotation" |
       | message | assistant    | Watches dogged         |
 
     Scenario: a cold prompt starts the new episode with an empty transcript, recall only (isaac-1vx0)
@@ -163,7 +163,7 @@ Feature: Episodes — live (policy + lifecycle)
     And session "reef-chat" has chronicle matching:
       | type    | message.role | message.content        |
       | message | user         | Chart the reef passage |
-      | message | user         | Set the watch rotation |
+      | message | user         | #"(?s).*Set the watch rotation" |
 
   # ----- Seal at close -----
 
@@ -368,6 +368,82 @@ Feature: Episodes — live (policy + lifecycle)
       | messages | #"(?s)Recalled from earlier conversations.*recall__scene"              |
       | messages | #"(?s)\[2026-03-01-1000-s1x1 · 2026-03-01\] Wine pairing for pheasant" |
       | messages | #"(?s)pinot noir suits roast pheasant.*What wine pairs with pheasant"  |
+
+  @wip
+    Scenario: a reset-mode crew receives its recall on the prompt message
+    A :context-mode :reset request carries only the last transcript entry.
+    Recall rides that entry, ahead of the prompt, instead of standing alone
+    before it where reset would drop it.
+    Given the isaac EDN file "config/crew/cordelia.edn" exists with:
+      | path           | value            |
+      | model          | echo             |
+      | soul           | You are Cordelia |
+      | session-policy | episodes         |
+      | context-mode   | reset            |
+    And config file "isaac.edn" containing:
+      """
+      {:defaults {:frequencies {:crew "cordelia"}}
+       :episodes {:embedding {:api "grover" :model "mini-embed"}}}
+      """
+    And crew "cordelia" has a closed episode "2026-03-01-1000-ab12" with scenes:
+      | id                   | started-at          | ended-at            | gist                      | text                                    |
+      | 2026-03-01-1000-s1x1 | 2026-03-01T10:00:00 | 2026-03-01T10:05:00 | Wine pairing for pheasant | a light pinot noir suits roast pheasant |
+    When isaac is run with "episodes index --crew cordelia"
+    Given the following model responses are queued:
+      | type | content              | model |
+      | text | Pinot noir, as ever. | echo  |
+    When isaac is run with "prompt -m 'What wine pairs with pheasant?' --session supper-chat --crew cordelia"
+    Then the exit code is 0
+    And the last LLM request matches:
+      | key      | value                                                                 |
+      | messages | #"(?s)Recalled from earlier conversations.*recall__scene"             |
+      | messages | #"(?s)pinot noir suits roast pheasant.*What wine pairs with pheasant" |
+    And the last LLM request mentions "What wine pairs with pheasant?" exactly 1 time
+    And session "supper-chat" has transcript matching:
+      | type    | message.role | message.content                                                            |
+      | message | user         | #"(?s)Recalled from earlier conversations.*What wine pairs with pheasant\?" |
+      | message | assistant    | Pinot noir, as ever.                                                       |
+
+  @wip
+    Scenario: sealing leaves recalled memory out of the new scenes
+    The recall block is context, not conversation. The seal distills only
+    what the episode said and did, so gists never describe remembering.
+    Given the isaac EDN file "config/crew/cordelia.edn" exists with:
+      | path           | value            |
+      | model          | echo             |
+      | soul           | You are Cordelia |
+      | session-policy | episodes         |
+    And the isaac EDN file "config/models/gist.edn" exists with:
+      | path     | value  |
+      | model    | gist   |
+      | provider | grover |
+    And config file "isaac.edn" containing:
+      """
+      {:defaults {:frequencies {:crew "cordelia"}}
+       :episodes {:gist-model :gist
+                  :embedding  {:api "grover" :model "mini-embed"}}}
+      """
+    And crew "cordelia" has a closed episode "2026-03-01-1000-ab12" with scenes:
+      | id                   | started-at          | ended-at            | gist                      | text                                    |
+      | 2026-03-01-1000-s1x1 | 2026-03-01T10:00:00 | 2026-03-01T10:05:00 | Wine pairing for pheasant | a light pinot noir suits roast pheasant |
+    When isaac is run with "episodes index --crew cordelia"
+    Given the current time is "2026-03-02T10:00:00"
+    And the following model responses are queued:
+      | type | content                   | model |
+      | text | Pinot noir, as ever.      | echo  |
+      | text | 1-2: Pheasant wine chosen | gist  |
+    When isaac is run with "prompt -m 'What wine pairs with pheasant?' --session supper-chat --crew cordelia"
+    And the episodes worker ticks at "2026-03-02T11:05:00"
+    Then an episode exists for crew "cordelia" matching:
+      | key        | value       |
+      | session-id | supper-chat |
+      | status     | closed      |
+    And that episode has scenes matching:
+      | gist                 | text                                                      |
+      | Pheasant wine chosen | #"(?s)What wine pairs with pheasant.*Pinot noir, as ever" |
+    And scene 1 of that episode does not contain "Recalled from earlier conversations"
+    And scene 1 of that episode does not contain "pinot noir suits roast pheasant"
+    And the last LLM request does not mention recall
 
     Scenario: below-floor opens inject nothing
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
