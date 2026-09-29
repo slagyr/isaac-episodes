@@ -69,7 +69,8 @@
                          :crew       crew
                          :status     :open
                          :session-id session-id
-                         :thread     session-id}
+                         :thread     session-id
+                         :opened-at  (str (or (memory/now) (java.time.Instant/now)))}
                   parent-episode (assoc :parent-episode parent-episode))
         create-opts (cond-> {:crew          crew
                              :cwd           cwd
@@ -104,16 +105,27 @@
         open       (find-open fs* root crew session-id)
         ttl        (lifecycle/ttl-minutes (runtime-cfg))
         transcript (when (and store session-id)
-                     (store/chronicle-transcript store session-id))
-        warm?      (and open (lifecycle/warm? transcript ttl))]
+                     (store/active-transcript store session-id))
+        warm?      (and open (or (lifecycle/warm? transcript ttl)
+                                 (lifecycle/warm? [{:timestamp (:opened-at open)}] ttl)))]
     (if warm?
       {:episode open :action :warm}
-      (let [prior (or (when open
-                        (stamp-closed-counters! fs* root open
-                                                (when store (store/get-session store session-id))))
-                      (latest-on-session fs* root crew session-id))
-            ep    (open-container! (cond-> opts
-                                     prior (assoc :parent-episode (:id prior))))]
+      (let [closed (when open
+                     (lifecycle/close-episode! {:fs            fs*
+                                                :root          root
+                                                :crew          crew
+                                                :episode-id    (:id open)
+                                                :session-store store
+                                                :cfg           (runtime-cfg)}))
+            prior  (or (when open
+                         (stamp-closed-counters! fs* root
+                                                 (or (:episode closed) open)
+                                                 (when store (store/get-session store session-id))))
+                       (latest-on-session fs* root crew session-id))
+            _      (when (and prior store)
+                     (store/rotate-transcript! store session-id))
+            ep     (open-container! (cond-> opts
+                                      prior (assoc :parent-episode (:id prior))))]
         {:episode ep :action (if prior :chained :opened)}))))
 
 (defn- recall-ahead!
@@ -227,6 +239,15 @@
   (append-error! [_ name error] (store/append-error! store name error))
   (append-compaction! [_ name compaction] (store/append-compaction! store name compaction))
   (append-reckoning! [_ name reckoning] (store/append-reckoning! store name reckoning))
+  (prepare-turn! [_ name input]
+    (when (and input (store/get-session store name))
+      (let [session-id (session-id* name)
+            crew       (crew-of store session-id nil)
+            resolved   (ensure-open-container! {:store store :crew crew :session-id session-id})]
+        (when (contains? #{:opened :chained} (:action resolved))
+          (recall-ahead! {:store store :crew crew :session-id session-id
+                          :query input :cfg (runtime-cfg)} resolved))
+        (:action resolved))))
   (splice-compaction! [_ name compaction]
     (let [session-id (session-id* name)
           session    (store/get-session store session-id)]

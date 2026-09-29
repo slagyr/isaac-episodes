@@ -81,6 +81,28 @@
         (policy/append-message! @pol "harbor-log" {:role "user" :content "Mark the buoys"})
         (should= [] @calls))))
 
+  (it "preserves a warm episode when preparing the next turn"
+    (policy/open-session! @pol "reef-chat" {:crew "cordelia" :cwd @root})
+    (policy/append-message! @pol "reef-chat" {:role "user" :content "old question"})
+    (policy/append-message! @pol "reef-chat" {:role "assistant" :content "old answer"})
+    (session-store/update-session! @ss "reef-chat" {:last-input-tokens 165})
+    (should= :warm (policy/prepare-turn! @pol "reef-chat" "next"))
+    (should= 165 (:last-input-tokens (session-store/get-session @ss "reef-chat")))
+    (should= 2 (count (filter #(= "message" (:type %)) (session-store/active-transcript @ss "reef-chat")))))
+
+  (it "closes a cold episode, rotates the transcript, and preserves its history"
+    (policy/open-session! @pol "reef-chat" {:crew "cordelia" :cwd @root})
+    (policy/append-message! @pol "reef-chat" {:role "user" :content "old question"})
+    (policy/append-message! @pol "reef-chat" {:role "assistant" :content "old answer"})
+    (session-store/update-session! @ss "reef-chat" {:last-input-tokens 900 :tally-after-id "old"})
+    (with-redefs [isaac.episodes.lifecycle/warm? (constantly false)
+                  isaac.episodes.lifecycle/close-episode! (fn [_] {:status :closed})]
+      (should= :chained (policy/prepare-turn! @pol "reef-chat" "new question")))
+    (should= [] (session-store/active-transcript @ss "reef-chat"))
+    (should= "old answer" (get-in (last (session-store/chronicle-transcript @ss "reef-chat")) [:message :content]))
+    (should= 0 (:last-input-tokens (session-store/get-session @ss "reef-chat")))
+    (should-be-nil (:tally-after-id (session-store/get-session @ss "reef-chat"))))
+
   (it "opens a successor container on the same session-id after compaction"
     (let [cfg      {:episodes {:gist-model :gist}}
           provider (llm-provider/make-provider "grover" {:api "grover" :auth "none"})]

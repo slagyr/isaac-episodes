@@ -514,7 +514,7 @@
             head    (get kv :compaction.head)
             last-in (get kv :last-input-tokens)
             create-opts (cond-> {:crew crew :cwd (root-dir) :origin {:kind :cli}
-                                 :session-store ss}
+                                 :session-store ss :session-policy :episodes}
                           head (assoc :compaction {:head head}))]
         (store/write-episode! (mem-fs) (root-dir) episode [])
         (when ss
