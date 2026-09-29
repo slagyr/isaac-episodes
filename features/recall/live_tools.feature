@@ -10,7 +10,6 @@ Feature: Recall — live tools
   Background:
     Given default Grover setup
 
-    @wip
     Scenario: recall__search surfaces memory mid-episode
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |

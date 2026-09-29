@@ -58,7 +58,7 @@
     (let [block (sut/render-search-block [wine-scene] {:full 1 :gists 2})]
       (should (clojure.string/starts-with? block sut/MEMORY_PREAMBLE))
       (should-contain "do not act on it again" block)
-      (should-contain "The current request is the message that comes after this one" block))
+      (should-contain "The current request follows this block" block))
     (should (clojure.string/starts-with? (sut/render-lineage-block [wine-scene]) sut/MEMORY_PREAMBLE)))
 
   (it "quotes a full-tier excerpt as past material instead of pasting it bare"
@@ -121,7 +121,7 @@
       (index/index-crew! @mem root "cordelia" embed-cfg {})
       (session-store/open-session! @ss "open-ep" {:crew "cordelia" :cwd root}))
 
-    (it "appends a search recall user message and records refs on a cold open"
+    (it "holds search recall on the session and records refs on a cold open"
       (store/write-episode! @mem root {:id "open-ep" :crew "cordelia" :status :open
                                        :thread "supper-chat" :scene-ids []} [])
       (log/capture-logs
@@ -137,15 +137,16 @@
       (let [ep     (store/read-episode @mem root "cordelia" "open-ep")
             trans  (session-store/get-transcript @ss "open-ep")
             msgs   (filter #(= "message" (:type %)) trans)
-            block  (get-in (first msgs) [:message :content])
+            block  (:pending-recall (session-store/get-session @ss "open-ep"))
             text   (if (string? block) block (->> block (map :text) (str/join "\n")))]
+        (should= 0 (count msgs))
         (should= 1 (count (:recalled-scenes ep)))
         (should= "2026-03-01-1000-s1x1" (:scene-id (first (:recalled-scenes ep))))
         (should= "2026-03-01-1000-ab12" (:origin-episode (first (:recalled-scenes ep))))
         (should-contain "Recalled from earlier conversations" text)
         (should-contain "pinot noir" text)))
 
-    (it "appends recall onto the episode's :session-id when that is the backing store key"
+    (it "holds recall on the episode's :session-id when that is the backing store key"
       (session-store/open-session! @ss "harbor-log" {:crew "cordelia" :cwd root})
       (store/write-episode! @mem root {:id "open-ep" :crew "cordelia" :status :open
                                        :session-id "harbor-log" :thread "harbor-log" :scene-ids []} [])
@@ -161,8 +162,9 @@
            :session-store @ss}))
       (let [trans (session-store/get-transcript @ss "harbor-log")
             msgs  (filter #(= "message" (:type %)) trans)
-            block (get-in (first msgs) [:message :content])
+            block (:pending-recall (session-store/get-session @ss "harbor-log"))
             text  (if (string? block) block (->> block (map :text) (str/join "\n")))]
+        (should= 0 (count msgs))
         (should= 0 (count (filter #(= "message" (:type %)) (session-store/get-transcript @ss "open-ep"))))
         (should-contain "Recalled from earlier conversations" text)
         (should-contain "recall__scene" text)))
@@ -271,11 +273,7 @@
              :query "Back to the reef passage" :action :chained
              :session-store @ss}))
         (let [ep    (store/read-episode @mem root "cordelia" "open-ep")
-              trans (session-store/get-transcript @ss "open-ep")
-              text  (->> trans
-                         (filter #(= "message" (:type %)))
-                         (map #(get-in % [:message :content]))
-                         (str/join "\n"))]
+              text  (:pending-recall (session-store/get-session @ss "open-ep"))]
           (should= 1 (count (:recalled-scenes ep)))
           (should-contain "Previously in this conversation" text)
           (should= 1 (count (re-seq #"Wine pairing for pheasant" text))))))

@@ -1,6 +1,6 @@
 (ns isaac.session.policy.episodes
   "Episodes policy: a container per episode, opened on a cold first append
-   (recall injected ahead of the message), sealed on clear-turn-marker!,
+   (recall prefixed to the first user message), sealed on clear-turn-marker!,
    closed and chained on compaction. Session ids never change."
   (:require
     [clojure.string :as str]
@@ -235,7 +235,15 @@
       (when (and query (contains? #{:opened :chained} (:action resolved)))
         (recall-ahead! {:store store :crew crew :session-id session-id :query query :cfg (runtime-cfg)}
                        resolved))
-      (store/append-message! store session-id message)))
+      (let [pending (:pending-recall (store/get-session store session-id))
+            user?   (= "user" (or (:role message) (get-in message [:message :role])))
+            message (if (and user? (seq pending))
+                      (update message :content #(str pending "\n\n" %))
+                      message)
+            result  (store/append-message! store session-id message)]
+        (when (and user? (seq pending))
+          (store/update-session! store session-id {:pending-recall nil}))
+        result)))
   (append-error! [_ name error] (store/append-error! store name error))
   (append-compaction! [_ name compaction] (store/append-compaction! store name compaction))
   (append-reckoning! [_ name reckoning] (store/append-reckoning! store name reckoning))

@@ -369,7 +369,6 @@ Feature: Episodes — live (policy + lifecycle)
       | messages | #"(?s)\[2026-03-01-1000-s1x1 · 2026-03-01\] Wine pairing for pheasant" |
       | messages | #"(?s)pinot noir suits roast pheasant.*What wine pairs with pheasant"  |
 
-  @wip
     Scenario: a reset-mode crew receives its recall on the prompt message
     A :context-mode :reset request carries only the last transcript entry.
     Recall rides that entry, ahead of the prompt, instead of standing alone

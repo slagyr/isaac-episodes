@@ -71,6 +71,19 @@
         (should= "Which way through the reef passage?" (:query @called))
         (should= "cordelia" (:crew @called)))))
 
+  (it "prefixes held recall only to the next user prompt and clears it"
+    (policy/open-session! @pol "harbor-log" {:crew "cordelia" :cwd @root})
+    (session-store/update-session! @ss "harbor-log" {:pending-recall "[Recalled memory]\nPast voyages"})
+    (policy/append-message! @pol "harbor-log" {:role "assistant" :content "Ready"})
+    (should= "[Recalled memory]\nPast voyages" (:pending-recall (session-store/get-session @ss "harbor-log")))
+    (policy/append-message! @pol "harbor-log" {:role "user" :content "Chart the reef"})
+    (should= "[Recalled memory]\nPast voyages\n\nChart the reef"
+             (get-in (last (session-store/get-transcript @ss "harbor-log")) [:message :content 0 :text]))
+    (should-be-nil (:pending-recall (session-store/get-session @ss "harbor-log")))
+    (policy/append-message! @pol "harbor-log" {:role "user" :content "Mark the buoys"})
+    (should= "Mark the buoys"
+             (get-in (last (session-store/get-transcript @ss "harbor-log")) [:message :content 0 :text])))
+
   (it "does not inject recall on a warm second user append"
     (let [calls (atom [])]
       (with-redefs [recall-inject/inject-on-open! (fn [opts] (swap! calls conj opts))]
