@@ -108,6 +108,64 @@ Feature: Episodes — live (policy + lifecycle)
       | message | user         | Set the watch rotation |
       | message | assistant    | Watches dogged         |
 
+    @wip
+    Scenario: a cold prompt starts the new episode with an empty transcript, recall only (isaac-1vx0)
+    Field 2026-09-29 13:51Z (yopp ACP session a6c4, idle ~20h): the first
+    message ran the compaction check against yesterday's gauge (930,470) on a
+    ~20k-token transcript, compacted for 5m48s, and only then opened the new
+    episode. A cold session never compacts. It chains, and the new episode
+    starts empty except for recall.
+    Given config:
+      | key        | value  |
+      | log.output | memory |
+    And the isaac EDN file "config/models/echo.edn" exists with:
+      | path           | value  |
+      | model          | echo   |
+      | provider       | grover |
+      | context-window | 200    |
+    And the isaac EDN file "config/crew/cordelia.edn" exists with:
+      | path           | value            |
+      | model          | echo             |
+      | soul           | You are Cordelia |
+      | session-policy | episodes         |
+    And the isaac EDN file "config/models/gist.edn" exists with:
+      | path     | value  |
+      | model    | gist   |
+      | provider | grover |
+    And config file "isaac.edn" containing:
+      """
+      {:defaults {:frequencies {:crew "cordelia"}}
+       :episodes {:gist-model :gist}}
+      """
+    And the current time is "2026-03-01T10:00:00"
+    And the following model responses are queued:
+      | type | content                   | model |
+      | text | Marked; keep to leeward.  | echo  |
+      | text | 1-2: Reef passage charted | gist  |
+      | text | Watches dogged            | echo  |
+    When the user sends "Chart the reef passage" on session "reef-chat"
+    And the episodes worker ticks at "2026-03-01T11:05:00"
+    Given the following sessions exist:
+      | name      | crew     | last-input-tokens |
+      | reef-chat | cordelia | 190               |
+    And the current time is "2026-03-01T11:45:00"
+    When the user sends "Set the watch rotation" on session "reef-chat"
+    Then the log does not have entries matching:
+      | event                       |
+      | :session/compaction-started |
+    And crew "cordelia" has 2 episodes
+    And the episodes for crew "cordelia" on thread "reef-chat" chain by lineage
+    And the last LLM request matches:
+      | key      | value                                               |
+      | messages | #"(?s)Previously in this conversation"              |
+      | messages | #"(?s)Reef passage charted.*Set the watch rotation" |
+    And the last LLM request mentions "Chart the reef passage" exactly 0 times
+    And the last LLM request mentions "Marked; keep to leeward." exactly 0 times
+    And session "reef-chat" has chronicle matching:
+      | type    | message.role | message.content        |
+      | message | user         | Chart the reef passage |
+      | message | user         | Set the watch rotation |
+
   # ----- Seal at close -----
 
     Scenario: closing seals the episode's transcript into scenes
