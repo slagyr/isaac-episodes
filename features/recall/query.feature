@@ -2,7 +2,8 @@ Feature: Recall — query
   `isaac recall <query>` ranks a crew's indexed scenes against a query by
   blending weighted channels: cosine over text vectors, cosine over gist
   vectors, lexical term overlap, and recency (half-life decay, default 30
-  days). Weights resolve defaults -> :recall config -> CLI flags, are
+  days). Weights resolve defaults -> :episodes :recall config (global,
+  then the crew's own) -> CLI flags, are
   "parts" multipliers, and the blended score is normalized by their sum.
   Ties break by scene-id ascending. Output shows the per-channel
   breakdown — the retrieval-quality checkpoint needs to see WHY a scene
@@ -81,7 +82,8 @@ Feature: Recall — query
 
   # ----- Weight precedence -----
 
-    Scenario: weights resolve defaults, then :recall config, then CLI flags
+  @wip
+    Scenario: weights resolve defaults, then :episodes :recall config, then CLI flags
     Given the current time is "2026-03-10T12:00:00"
     And config file "isaac.edn" containing:
       """
@@ -98,8 +100,8 @@ Feature: Recall — query
       | 1\. 2026-01-10-1000-s1x1 |
     Given config file "isaac.edn" containing:
       """
-      {:episodes {:embedding {:api "grover" :model "mini-embed"}}
-       :recall {:weights {:recency 8}}}
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}
+                  :recall    {:weights {:recency 8}}}}
       """
     When isaac is run with "recall harbor --crew cordelia"
     Then the stdout matches:
@@ -138,6 +140,37 @@ Feature: Recall — query
     Then the stdout matches:
       | pattern                               |
       | 1\. 2026-03-10-1100-newx              |
+      | 2\. 2026-01-10-1000-oldx\s+.*rec 0\.5 |
+    And the exit code is 0
+
+  @wip
+    Scenario: a crew's :episodes :recall overrides the global settings for that crew only
+    Given the current time is "2026-03-10T12:00:00"
+    And config file "isaac.edn" containing:
+      """
+      {:episodes {:embedding {:api "grover" :model "mini-embed"}}}
+      """
+    And the isaac EDN file "config/crew/bosun.edn" exists with:
+      | path                      | value         |
+      | soul                      | You are Bosun |
+      | episodes.recall.half-life | 60            |
+    And crew "cordelia" has a closed episode "2026-01-10-1000-ab12" with scenes:
+      | id                   | started-at          | ended-at            | gist | text |
+      | 2026-01-10-1000-oldx | 2026-01-10T11:00:00 | 2026-01-10T12:00:00 | grog | grog |
+      | 2026-03-10-1100-newx | 2026-03-10T10:00:00 | 2026-03-10T11:00:00 | grog | grog |
+    And crew "bosun" has a closed episode "2026-01-10-1000-ab12" with scenes:
+      | id                   | started-at          | ended-at            | gist | text |
+      | 2026-01-10-1000-oldx | 2026-01-10T11:00:00 | 2026-01-10T12:00:00 | grog | grog |
+      | 2026-03-10-1100-newx | 2026-03-10T10:00:00 | 2026-03-10T11:00:00 | grog | grog |
+    When isaac is run with "episodes index --crew cordelia"
+    And isaac is run with "episodes index --crew bosun"
+    When isaac is run with "recall grog --crew cordelia"
+    Then the stdout matches:
+      | pattern                                |
+      | 2\. 2026-01-10-1000-oldx\s+.*rec 0\.25 |
+    When isaac is run with "recall grog --crew bosun"
+    Then the stdout matches:
+      | pattern                               |
       | 2\. 2026-01-10-1000-oldx\s+.*rec 0\.5 |
     And the exit code is 0
 
@@ -260,21 +293,6 @@ Feature: Recall — query
     When isaac is run with "recall grog --crew cordelia"
     Then the stderr contains "weak matches"
     When isaac is run with "recall grog --crew cordelia --floor-cos 0"
-    Then the stderr does not contain "weak matches"
-    And the exit code is 0
-
-    Scenario: leftover :recall :floor-cos does not raise the floor
-    Given config file "isaac.edn" containing:
-      """
-      {:episodes {:embedding {:api "grover" :model "mini-embed"}}
-       :recall {:floor-cos 0.999}}
-      """
-    And crew "cordelia" has a closed episode "2026-03-01-1000-ab12" with scenes:
-      | id                   | started-at          | ended-at            | gist                | text                                |
-      | 2026-03-01-1000-s1x1 | 2026-03-01T10:00:00 | 2026-03-01T10:01:00 | Reef charting       | soundings along the leeward passage |
-      | 2026-03-01-1002-s2x2 | 2026-03-01T10:02:00 | 2026-03-01T10:03:00 | Galley provisioning | hardtack rations for the voyage     |
-    When isaac is run with "episodes index --crew cordelia"
-    When isaac is run with "recall grog --crew cordelia"
     Then the stderr does not contain "weak matches"
     And the exit code is 0
 

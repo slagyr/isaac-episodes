@@ -47,6 +47,30 @@ Feature: Idle sealing — a quiet thread becomes recallable within minutes
       | Reef passage charted | #"(?s)keep west" | idle        |
     And the index for crew "cordelia" has a row for gist "Reef passage charted"
 
+  @wip
+  Scenario: a crew's :episodes :seal :idle-minutes overrides the global idle time
+    Given the isaac EDN file "config/crew/cordelia.edn" exists with:
+      | path                       | value            |
+      | model                      | echo             |
+      | soul                       | You are Cordelia |
+      | session-policy             | episodes         |
+      | episodes.seal.idle-minutes | 10               |
+    And the current time is "2026-03-01T10:00:00"
+    And the following model responses are queued:
+      | type | content                   | model |
+      | text | Charted, keep west        | echo  |
+      | text | 1-2: Reef passage charted | gist  |
+    When isaac is run with "prompt -m 'Chart the reef passage' --session reef-chat --crew cordelia"
+    When the episodes worker ticks at "2026-03-01T10:05:00"
+    Then an episode exists for crew "cordelia" matching:
+      | key    | value |
+      | status | open  |
+    And that episode has 0 scenes
+    When the episodes worker ticks at "2026-03-01T10:11:00"
+    Then that episode has scenes matching:
+      | gist                 | text             | seal-reason |
+      | Reef passage charted | #"(?s)keep west" | idle        |
+
   Scenario: a warm thread is left alone
     Given the current time is "2026-03-01T10:00:00"
     And the following model responses are queued:

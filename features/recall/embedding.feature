@@ -94,6 +94,20 @@ Feature: Embedding Seam
 
   # ----- Validation -----
 
+  @wip
+  Scenario: config validation checks a crew's :episodes overrides
+    Given the isaac EDN file "config/crew/cordelia.edn" exists with:
+      | path                      | value            |
+      | soul                      | You are Cordelia |
+      | session-policy            | episodes         |
+      | episodes.recall.half-life | soon             |
+    When isaac is run with "config validate"
+    Then the stderr matches:
+      | pattern                                    |
+      | crew\.cordelia\.episodes\.recall\.half-life |
+      | bad value: soon                            |
+    And the exit code is 1
+
   Scenario: config validation rejects an unknown embedding api
     Given config file "isaac.edn" containing:
       """
