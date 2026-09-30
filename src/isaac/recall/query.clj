@@ -3,6 +3,7 @@
   (:require
     [clojure.string :as str]
     [isaac.episodes.store :as store]
+    [isaac.episodes.crew :as episode-crew]
     [isaac.fs :as fs]
     [isaac.recall.embedding :as embedding]
     [isaac.recall.index :as index]
@@ -86,7 +87,8 @@
 
    Returns {:hits [...] :model ... :warning ...} or {:error ... :message ...}."
   [fs* root crew query-text cfg {:keys [now weights half-life top] :as opts}]
-  (let [path (index/index-path root crew)]
+  (let [cfg (episode-crew/config-for cfg crew)
+        path (index/index-path root crew)]
     (if-not (fs/exists? fs* path)
       {:error   :no-index
        :message (str "no index for crew " crew " — run isaac episodes index")}
@@ -110,7 +112,7 @@
                 embed-ms (quot (- (System/nanoTime) t-embed) 1000000)
                 w       (score/resolve-weights cfg (or weights {}))
                 floor*  (score/resolve-floor cfg (select-keys opts [:floor-cos]))
-                hl      (or half-life (get-in cfg [:recall :half-life]) 30.0)
+                hl      (or half-life (get-in cfg [:episodes :recall :half-life]) 30.0)
                 t-scenes (System/nanoTime)
                 scenes  (scene-lookup fs* root crew)
                 scenes-ms (quot (- (System/nanoTime) t-scenes) 1000000)

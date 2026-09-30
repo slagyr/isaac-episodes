@@ -326,7 +326,7 @@
         root (runtime-root root)
         ss   (runtime-store session-store)
         crew (episode-crew/resolve-id crew cfg)
-        ttl  (ttl-minutes cfg)
+        ttl  (ttl-minutes (episode-crew/config-for cfg crew))
         open (store/find-open-on-thread fs* root crew thread)]
     (cond
       (nil? open)
@@ -447,7 +447,7 @@
         root (runtime-root root)
         ss   (runtime-store session-store)
         crew (episode-crew/resolve-id crew cfg)
-        cfg  (or cfg {})
+        cfg  (episode-crew/config-for (or cfg {}) crew)
         existing (when (and root episode-id)
                    (store/read-episode fs* root crew episode-id))]
     (cond
@@ -549,7 +549,7 @@
 
       :else
       (let [transcript (or transcript (transcript-for ss fs* root existing))
-            ttl        (ttl-minutes cfg)]
+            ttl        (ttl-minutes (episode-crew/config-for cfg crew))]
         (if (warm? transcript ttl)
           {:status :skipped :reason :warm}
           (do

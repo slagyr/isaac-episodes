@@ -21,7 +21,7 @@
 
   (it "appends a complete line for each recall and caps candidates at twenty"
     (doseq [kind [:inject :search]]
-      (sut/append! @mem root "cordelia" {:recall {:ledger true}}
+      (sut/append! @mem root "cordelia" {:episodes {:recall {:ledger true}}}
                    {:kind kind :session "bistro-chat" :thread "bistro-chat" :lineage []
                     :query "pheasant wine" :floor 0.47 :top 8 :hits hits :injected ["s0"]}))
     (let [entries (mapv edn/read-string (str/split-lines (fs/slurp @mem (sut/path root "cordelia"))))]
@@ -37,6 +37,6 @@
     (log/capture-logs
       (with-redefs [fs/spit (fn [& _] (throw (java.io.IOException. "read only")))]
         (dotimes [_ 2]
-          (should= nil (sut/append! @mem root "cordelia" {:recall {:ledger true}}
+          (should= nil (sut/append! @mem root "cordelia" {:episodes {:recall {:ledger true}}}
                                     {:kind :search :query "wine" :hits [] :floor 0.47}))))
       (should= 1 (count (filter #(= :recall.ledger/write-failed (:event %)) @log/captured-logs))))))

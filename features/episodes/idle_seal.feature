@@ -47,7 +47,6 @@ Feature: Idle sealing — a quiet thread becomes recallable within minutes
       | Reef passage charted | #"(?s)keep west" | idle        |
     And the index for crew "cordelia" has a row for gist "Reef passage charted"
 
-  @wip
   Scenario: a crew's :episodes :seal :idle-minutes overrides the global idle time
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path                       | value            |

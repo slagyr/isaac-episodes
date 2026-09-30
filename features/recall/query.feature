@@ -82,7 +82,6 @@ Feature: Recall — query
 
   # ----- Weight precedence -----
 
-  @wip
     Scenario: weights resolve defaults, then :episodes :recall config, then CLI flags
     Given the current time is "2026-03-10T12:00:00"
     And config file "isaac.edn" containing:
@@ -143,7 +142,6 @@ Feature: Recall — query
       | 2\. 2026-01-10-1000-oldx\s+.*rec 0\.5 |
     And the exit code is 0
 
-  @wip
     Scenario: a crew's :episodes :recall overrides the global settings for that crew only
     Given the current time is "2026-03-10T12:00:00"
     And config file "isaac.edn" containing:

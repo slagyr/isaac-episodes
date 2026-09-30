@@ -1,69 +1,144 @@
-{:id :isaac.session.episodes
- :version "0.1.5"
- :builtin? true
- :factory isaac.episodes.module/create-module
-
- :berths
- {:isaac.session.episodes/embedding-api
-  {:description "Episode embedding APIs dispatched by :episodes :embedding :api."
-   :schema {:type :map
-            :key-spec {:type :keyword}
-            :value-spec {:type :map
-                         :schema {:namespace {:type :symbol :validations [:present?]}}}}}}
-
- :isaac/component
- {:episodes {:namespace isaac.episodes.service}}
-
- :isaac/cli
- {:embed {:usage "embed [options] [text ...]"
-          :summary "Embed text with the configured embedding API"
-          :namespace isaac.recall.embedding.cli
-          :hosted true}
-  :episodes {:usage "episodes [subcommand] [options]"
-             :summary "Manage episodic memory (migrate sessions to scenes + gists)"
-             :namespace isaac.episodes.cli
-             :hosted true}
-  :recall {:usage "recall [options] <query>"
-           :summary "Rank a crew's indexed scenes against a query"
-           :namespace isaac.recall.cli
-           :hosted true}}
-
- :isaac.agent/tools
- {:recall/search {:factory isaac.episodes.tools/search-tool-factory}
-  :recall/scene {:factory isaac.episodes.tools/scene-tool-factory}}
-
- :isaac.agent/session-policy
- {:episodes {:factory isaac.session.policy.episodes/create}}
-
+{:isaac/cli
+ {:embed
+  {:usage "embed [options] [text ...]",
+   :summary "Embed text with the configured embedding API",
+   :namespace isaac.recall.embedding.cli,
+   :hosted true},
+  :episodes
+  {:usage "episodes [subcommand] [options]",
+   :summary
+   "Manage episodic memory (migrate sessions to scenes + gists)",
+   :namespace isaac.episodes.cli,
+   :hosted true},
+  :recall
+  {:usage "recall [options] <query>",
+   :summary "Rank a crew's indexed scenes against a query",
+   :namespace isaac.recall.cli,
+   :hosted true}},
  :isaac.session.episodes/embedding-api
- {:ollama {:namespace isaac.recall.embedding.ollama}
-  :embeddings {:namespace isaac.recall.embedding.embeddings}
-  :grover {:namespace isaac.recall.embedding}}
-
+ {:ollama {:namespace isaac.recall.embedding.ollama},
+  :embeddings {:namespace isaac.recall.embedding.embeddings},
+  :grover {:namespace isaac.recall.embedding}},
+ :isaac.agent/session-policy
+ {:episodes {:factory isaac.session.policy.episodes/create}},
+ :factory isaac.episodes.module/create-module,
+ :id :isaac.session.episodes,
+ :isaac/component {:episodes {:namespace isaac.episodes.service}},
+ :isaac.agent/tools
+ #:recall{:search {:factory isaac.episodes.tools/search-tool-factory},
+          :scene {:factory isaac.episodes.tools/scene-tool-factory}},
  :isaac.config/schema
- {:episodes {:schema {:name :episodes :type :map :description "Episodic memory settings"
-                     :schema {:gist-model {:type :id}
-                              :ttl-minutes {:type :int}
-                              :embedding {:type :map :description "Optional embedding capability"
-                                          :schema {:api {:type :id
-                                                         :validations [:present?
-                                                                       [:registered-in? :isaac.session.episodes/embedding-api]]}
-                                                   :model {:type :string :validations [:present?]}
-                                                   :floor-cos {:type :double}
-                                                   :base-url {:type :string}
-                                                   :api-key {:type :string}
-                                                   :timeout {:type :int}
-                                                   :simulate-provider {:type :string}}}
-                              :seal {:type :map :schema {:size-cap {:type :int}
-                                                        :drift-threshold {:type :double}
-                                                        :min-tail {:type :int}
-                                                        :idle-minutes {:type :int}}}}}}
-  :recall {:schema {:name :recall :type :map :description "Recall scoring and injection settings"
-                    :schema {:ledger {:type :boolean}
-                            :half-life {:type :int}
-                             :weights {:type :map :schema {:text {:type :double}
-                                                          :gist {:type :double}
-                                                          :lex {:type :double}
-                                                          :recency {:type :double}}}
-                             :inject {:type :map :schema {:full {:type :int}
-                                                         :gists {:type :int}}}}}}}}
+ {:episodes
+  {:schema
+   {:name :episodes,
+    :type :map,
+    :description "Episodic memory settings",
+    :schema
+    {:gist-model {:type :id},
+     :ttl-minutes {:type :int},
+     :embedding
+     {:type :map,
+      :description "Optional embedding capability",
+      :schema
+      {:api
+       {:type :id,
+        :validations
+        [:present?
+         [:registered-in? :isaac.session.episodes/embedding-api]]},
+       :model {:type :string, :validations [:present?]},
+       :floor-cos {:type :double},
+       :base-url {:type :string},
+       :api-key {:type :string},
+       :timeout {:type :int},
+       :simulate-provider {:type :string}}},
+     :seal
+     {:type :map,
+      :schema
+      {:size-cap {:type :int},
+       :drift-threshold {:type :double},
+       :min-tail {:type :int},
+       :idle-minutes {:type :int}}},
+     :recall
+     {:name :recall,
+      :type :map,
+      :description "Recall scoring and injection settings",
+      :schema
+      {:ledger {:type :boolean},
+       :half-life {:type :int},
+       :weights
+       {:type :map,
+        :schema
+        {:text {:type :double},
+         :gist {:type :double},
+         :lex {:type :double},
+         :recency {:type :double}}},
+       :inject
+       {:type :map,
+        :schema {:full {:type :int}, :gists {:type :int}}}}}}}},
+  :crew
+  {:schema
+   {:type :map,
+    :value-spec
+    {:type :map,
+     :schema
+     {:episodes
+      {:name :episodes,
+       :type :map,
+       :description "Episodic memory settings",
+       :schema
+       {:gist-model {:type :id},
+        :ttl-minutes {:type :int},
+        :embedding
+        {:type :map,
+         :description "Optional embedding capability",
+         :schema
+         {:api
+          {:type :id,
+           :validations
+           [:present?
+            [:registered-in? :isaac.session.episodes/embedding-api]]},
+          :model {:type :string, :validations [:present?]},
+          :floor-cos {:type :double},
+          :base-url {:type :string},
+          :api-key {:type :string},
+          :timeout {:type :int},
+          :simulate-provider {:type :string}}},
+        :seal
+        {:type :map,
+         :schema
+         {:size-cap {:type :int},
+          :drift-threshold {:type :double},
+          :min-tail {:type :int},
+          :idle-minutes {:type :int}}},
+        :recall
+        {:name :recall,
+         :type :map,
+         :description "Recall scoring and injection settings",
+         :schema
+         {:ledger {:type :boolean},
+          :half-life {:type :int},
+          :weights
+          {:type :map,
+           :schema
+           {:text {:type :double},
+            :gist {:type :double},
+            :lex {:type :double},
+            :recency {:type :double}}},
+          :inject
+          {:type :map,
+           :schema {:full {:type :int}, :gists {:type :int}}}}}}}}}}}},
+ :version "0.1.5",
+ :berths
+ #:isaac.session.episodes{:embedding-api
+                          {:description
+                           "Episode embedding APIs dispatched by :episodes :embedding :api.",
+                           :schema
+                           {:type :map,
+                            :key-spec {:type :keyword},
+                            :value-spec
+                            {:type :map,
+                             :schema
+                             {:namespace
+                              {:type :symbol,
+                               :validations [:present?]}}}}}},
+ :builtin? true}

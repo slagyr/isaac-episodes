@@ -182,9 +182,9 @@
     :else       nil))
 
 (defn resolve-weights
-  "defaults → :recall config → CLI flag overrides (flags win)."
+  "defaults → :episodes :recall config → CLI flag overrides (flags win)."
   [cfg flags]
-  (let [cfg-w (or (get-in cfg [:recall :weights]) {})
+  (let [cfg-w (or (get-in cfg [:episodes :recall :weights]) {})
         from-cfg (into {}
                        (keep (fn [[k dest]]
                                (when-let [v (as-number (get cfg-w k))]

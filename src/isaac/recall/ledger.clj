@@ -21,7 +21,7 @@
 (defn append!
   "Record the scored hits in rank order, independently of the shorter prompt shortlist."
   [fs* root crew cfg {:keys [hits floor] :as recall}]
-  (when (true? (get-in cfg [:recall :ledger]))
+  (when (true? (get-in cfg [:episodes :recall :ledger]))
     (try
       (let [dest (path root crew)
             candidates (->> hits

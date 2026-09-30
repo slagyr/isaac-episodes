@@ -127,13 +127,13 @@
       (should= {:text 1.0 :gist 1.0 :lex 1.0 :recency 0.5}
                (sut/resolve-weights {} {})))
 
-    (it "overlays :recall config weights"
+    (it "overlays :episodes :recall config weights"
       (should= {:text 1.0 :gist 1.0 :lex 1.0 :recency 8.0}
-               (sut/resolve-weights {:recall {:weights {:recency 8}}} {})))
+               (sut/resolve-weights {:episodes {:recall {:weights {:recency 8}}}} {})))
 
     (it "lets CLI flags win over config"
       (should= {:text 1.0 :gist 1.0 :lex 1.0 :recency 1.0}
-               (sut/resolve-weights {:recall {:weights {:recency 8}}}
+               (sut/resolve-weights {:episodes {:recall {:weights {:recency 8}}}}
                                     {:recency 1})))
     )
 
@@ -141,7 +141,7 @@
     (it "defaults to 0.47"
       (should= 0.47 (sut/resolve-floor {} {})))
 
-    (it "overlays the embedding model floor then the CLI floor; leftover recall config is ignored"
+    (it "overlays the embedding model floor then the CLI floor; embedding floor wins over a retired root recall block"
       (should= 0.0 (sut/resolve-floor {:episodes {:embedding {:floor-cos 0}}} {}))
       (should= 0.47 (sut/resolve-floor {:recall {:floor-cos 0.999}} {}))
       (should= 0.999 (sut/resolve-floor {:episodes {:embedding {:floor-cos 0}}}

@@ -10,6 +10,7 @@
     [isaac.config.loader :as loader]
     [isaac.config.root :as root]
     [isaac.fs :as fs]
+    [isaac.episodes.crew :as episode-crew]
     [isaac.recall.query :as query]
     [isaac.tool.memory :as memory]))
 
@@ -117,7 +118,7 @@
               crew (or (:crew options)
                        (config-defaults/crew-id cfg))
               q    (str/join " " arguments)
-              result (query/query fs root crew q cfg
+              result (query/query fs root crew q (episode-crew/config-for cfg crew)
                                   (cond-> {:now       (memory/now)
                                            :weights   (flag-weights options)
                                            :half-life (:half-life options)

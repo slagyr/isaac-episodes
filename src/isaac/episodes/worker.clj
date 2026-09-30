@@ -4,6 +4,7 @@
     [clojure.string :as str]
     [isaac.config.loader :as loader]
     [isaac.episodes.lifecycle :as lifecycle]
+    [isaac.episodes.crew :as episode-crew]
     [isaac.episodes.store :as store]
     [isaac.fs :as fs]
     [isaac.logger :as log]
@@ -140,7 +141,7 @@
                           (process-episode! {:fs            fs*
                                              :root          root
                                              :crew          crew
-                                             :cfg           cfg
+                                             :cfg           (episode-crew/config-for cfg crew)
                                              :session-store ss
                                              :provider      provider
                                              :model         model

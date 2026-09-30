@@ -4,6 +4,7 @@
     [clojure.string :as str]
     [isaac.config.defaults :as config-defaults]
     [isaac.config.loader :as loader]
+    [isaac.episodes.crew :as episode-crew]
     [isaac.episodes.store :as store]
     [isaac.fs :as fs]
     [isaac.logger :as log]
@@ -61,7 +62,7 @@
         crew (crew-of args)
         fs*  (bounds/filesystem args)
         root (bounds/root args)
-        cfg  (or (loader/snapshot "recall search") {})]
+        cfg  (episode-crew/config-for (or (loader/snapshot "recall search") {}) crew)]
     (if (str/blank? q)
       {:isError true :error "query is required"}
       (let [result (try

@@ -48,7 +48,7 @@
   (str "- [" (:id scene) " · " (scene-date scene) "] " (or (:gist scene) "")))
 
 (defn- inject-cfg [cfg]
-  (merge DEFAULT_INJECT (get-in cfg [:recall :inject] {})))
+  (merge DEFAULT_INJECT (get-in cfg [:episodes :recall :inject] {})))
 
 (defn- indent [text]
   (str/join "\n" (map #(str "  > " %) (str/split-lines (str text)))))
@@ -230,6 +230,7 @@
     (let [fs*     (or fs (fs/instance))
           root    (or root (loader/root))
           crew    (episode-crew/resolve-id (or crew (:crew episode)))
+          cfg     (episode-crew/config-for cfg crew)
           eid     (:id episode)
           thread  (or (:thread episode) (:session-id episode))
           backing (or (when (and session-store (:session-id episode)

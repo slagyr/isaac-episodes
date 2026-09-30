@@ -17,3 +17,17 @@
   ([crew cfg]
    (or (named crew)
        (config-defaults/crew-id (or cfg (loader/snapshot "episodes: default crew"))))))
+
+(defn- merge-maps [base override]
+  (merge-with (fn [left right]
+                (if (and (map? left) (map? right))
+                  (merge-maps left right)
+                  right)) base override))
+
+(defn config-for
+  "Resolve a crew's nested episode settings over the global episode settings."
+  [cfg crew]
+  (let [id (if (keyword? crew) (name crew) (str crew))
+        override (or (get-in cfg [:crew id :episodes])
+                     (get-in cfg [:crew (keyword id) :episodes]))]
+    (assoc cfg :episodes (merge-maps (:episodes cfg) override))))

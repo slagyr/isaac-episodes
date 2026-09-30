@@ -103,7 +103,7 @@
         root       (runtime-root)
         crew       (episode-crew/resolve-id crew)
         open       (find-open fs* root crew session-id)
-        ttl        (lifecycle/ttl-minutes (runtime-cfg))
+        ttl        (lifecycle/ttl-minutes (episode-crew/config-for (runtime-cfg) crew))
         transcript (when (and store session-id)
                      (store/active-transcript store session-id))
         warm?      (and open (or (lifecycle/warm? transcript ttl)
