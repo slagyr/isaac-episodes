@@ -23,6 +23,7 @@
  {:episodes {:factory isaac.session.policy.episodes/create}},
  :factory isaac.episodes.module/create-module,
  :id :isaac.session.episodes,
+ :handbook "isaac/episodes/handbook.md",
  :isaac/component {:episodes {:namespace isaac.episodes.service}},
  :isaac.agent/tools
  #:recall{:search {:factory isaac.episodes.tools/search-tool-factory},
@@ -34,47 +35,113 @@
     :type :map,
     :description "Episodic memory settings",
     :schema
-    {:gist-model {:type :id},
-     :ttl-minutes {:type :int},
+    {:gist-model
+     {:type :id,
+      :description
+      "Model id used to gist a closed or live-sealed episode's scenes. Falls back to :defaults :crew :model when unset."},
+     :ttl-minutes
+     {:type :int,
+      :description
+      "Minutes since the last transcript entry after which an open episode is cold; the next message on that thread closes it and chains a successor. Default 60 [verify: default lives in code]."},
      :embedding
      {:type :map,
       :description "Optional embedding capability",
       :schema
       {:api
        {:type :id,
+        :description
+        "Embedding API id, dispatched to the :isaac.session.episodes/embedding-api berth (grover, ollama, embeddings, or a module-contributed one).",
         :validations
         [:present?
          [:registered-in? :isaac.session.episodes/embedding-api]]},
-       :model {:type :string, :validations [:present?]},
-       :floor-cos {:type :double},
-       :base-url {:type :string},
-       :api-key {:type :string},
-       :timeout {:type :int},
-       :simulate-provider {:type :string}}},
+       :model {:type :string, :validations [:present?]
+               :description "Model name passed to the embedding API."},
+       :floor-cos
+       {:type :double,
+        :description
+        "Cosine match-floor override for recall; below floor a hit is admitted only by lexical match. Default 0.47 [verify: default lives in code]."},
+       :base-url
+       {:type :string,
+        :description "Base URL for the embedding API's HTTP endpoint (ollama / embeddings apis)."},
+       :api-key
+       {:type :string,
+        :description
+        "Bearer credential for the embedding API (embeddings/OpenAI-compatible). Write as ${VAR}, never a literal secret."},
+       :timeout
+       {:type :int,
+        :description "HTTP request timeout in milliseconds for the embedding API call."},
+       :simulate-provider
+       {:type :string,
+        :description
+        "Test-only: route the embedding HTTP call through a simulated provider instead of a live one."}}},
      :seal
      {:type :map,
+      :description
+      "Live-seal thresholds: when an open episode seals part of its tail into scenes without waiting for the episode to close.",
       :schema
-      {:size-cap {:type :int},
-       :drift-threshold {:type :double},
-       :min-tail {:type :int},
-       :idle-minutes {:type :int}}},
+      {:size-cap
+       {:type :int,
+        :description
+        "Unsealed message count that forces a live seal of the whole tail. Default 80 [verify: default lives in code]."},
+       :drift-threshold
+       {:type :double,
+        :description
+        "Cosine similarity below which the rolling open-scene topic vector triggers a live seal of the finished topic. Unset disables drift sealing."},
+       :min-tail
+       {:type :int,
+        :description
+        "Minimum unsealed message count before drift sealing can fire, alongside :drift-threshold."},
+       :idle-minutes
+       {:type :int,
+        :description
+        "Minutes since the last message after which the episodes worker live-seals an idle open episode's tail. Default 3 [verify: default lives in code]."}}},
      :recall
      {:name :recall,
       :type :map,
       :description "Recall scoring and injection settings",
       :schema
-      {:ledger {:type :boolean},
-       :half-life {:type :int},
+      {:ledger
+       {:type :boolean,
+        :description
+        "When true, append every recall decision (query, scored candidates, what was injected) as one EDN line under sessions/<crew>/recall/ledger.ednl. Off by default."},
+       :half-life
+       {:type :int,
+        :description
+        "Recency half-life in days for the recall score's recency channel. Default 30 [verify: default lives in code]."},
        :weights
        {:type :map,
+        :description
+        "Per-channel weights blended into a recall hit's score (:text/:gist/:lex/:recency).",
         :schema
-        {:text {:type :double},
-         :gist {:type :double},
-         :lex {:type :double},
-         :recency {:type :double}}},
+        {:text
+         {:type :double,
+          :description
+          "Weight of the query-to-scene-text cosine channel. Default 1.0 [verify: default lives in code]."},
+         :gist
+         {:type :double,
+          :description
+          "Weight of the query-to-scene-gist cosine channel. Default 1.0 [verify: default lives in code]."},
+         :lex
+         {:type :double,
+          :description
+          "Weight of the IDF-weighted lexical-overlap channel. Default 1.0 [verify: default lives in code]."},
+         :recency
+         {:type :double,
+          :description
+          "Weight of the recency-decay channel. Default 0.5 [verify: default lives in code]."}}},
        :inject
        {:type :map,
-        :schema {:full {:type :int}, :gists {:type :int}}}}}}}},
+        :description
+        "How many ranked search hits recall-at-open injects, split into full-text and gist-only tiers.",
+        :schema
+        {:full
+         {:type :int,
+          :description
+          "Number of top-ranked search hits injected with their full excerpt text. Default 1 [verify: default lives in code]."},
+         :gists
+         {:type :int,
+          :description
+          "Number of next-ranked search hits injected as gist lines only. Default 2 [verify: default lives in code]."}}}}}}}},
   :crew
   {:schema
    {:type :map,
@@ -86,47 +153,113 @@
        :type :map,
        :description "Episodic memory settings",
        :schema
-       {:gist-model {:type :id},
-        :ttl-minutes {:type :int},
+       {:gist-model
+        {:type :id,
+         :description
+         "Model id used to gist this crew's closed or live-sealed episode scenes. Falls back to :defaults :crew :model when unset."},
+        :ttl-minutes
+        {:type :int,
+         :description
+         "Minutes since the last transcript entry after which this crew's open episode is cold; the next message on that thread closes it and chains a successor. Default 60 [verify: default lives in code]."},
         :embedding
         {:type :map,
          :description "Optional embedding capability",
          :schema
          {:api
           {:type :id,
+           :description
+           "Embedding API id, dispatched to the :isaac.session.episodes/embedding-api berth (grover, ollama, embeddings, or a module-contributed one).",
            :validations
            [:present?
             [:registered-in? :isaac.session.episodes/embedding-api]]},
-          :model {:type :string, :validations [:present?]},
-          :floor-cos {:type :double},
-          :base-url {:type :string},
-          :api-key {:type :string},
-          :timeout {:type :int},
-          :simulate-provider {:type :string}}},
+          :model {:type :string, :validations [:present?]
+                  :description "Model name passed to the embedding API."},
+          :floor-cos
+          {:type :double,
+           :description
+           "Cosine match-floor override for recall; below floor a hit is admitted only by lexical match. Default 0.47 [verify: default lives in code]."},
+          :base-url
+          {:type :string,
+           :description "Base URL for the embedding API's HTTP endpoint (ollama / embeddings apis)."},
+          :api-key
+          {:type :string,
+           :description
+           "Bearer credential for the embedding API (embeddings/OpenAI-compatible). Write as ${VAR}, never a literal secret."},
+          :timeout
+          {:type :int,
+           :description "HTTP request timeout in milliseconds for the embedding API call."},
+          :simulate-provider
+          {:type :string,
+           :description
+           "Test-only: route the embedding HTTP call through a simulated provider instead of a live one."}}},
         :seal
         {:type :map,
+         :description
+         "Live-seal thresholds: when this crew's open episode seals part of its tail into scenes without waiting for the episode to close.",
          :schema
-         {:size-cap {:type :int},
-          :drift-threshold {:type :double},
-          :min-tail {:type :int},
-          :idle-minutes {:type :int}}},
+         {:size-cap
+          {:type :int,
+           :description
+           "Unsealed message count that forces a live seal of the whole tail. Default 80 [verify: default lives in code]."},
+          :drift-threshold
+          {:type :double,
+           :description
+           "Cosine similarity below which the rolling open-scene topic vector triggers a live seal of the finished topic. Unset disables drift sealing."},
+          :min-tail
+          {:type :int,
+           :description
+           "Minimum unsealed message count before drift sealing can fire, alongside :drift-threshold."},
+          :idle-minutes
+          {:type :int,
+           :description
+           "Minutes since the last message after which the episodes worker live-seals this crew's idle open episode tail. Default 3 [verify: default lives in code]."}}},
         :recall
         {:name :recall,
          :type :map,
          :description "Recall scoring and injection settings",
          :schema
-         {:ledger {:type :boolean},
-          :half-life {:type :int},
+         {:ledger
+          {:type :boolean,
+           :description
+           "When true, append every recall decision (query, scored candidates, what was injected) as one EDN line under sessions/<crew>/recall/ledger.ednl. Off by default."},
+          :half-life
+          {:type :int,
+           :description
+           "Recency half-life in days for the recall score's recency channel. Default 30 [verify: default lives in code]."},
           :weights
           {:type :map,
+           :description
+           "Per-channel weights blended into a recall hit's score (:text/:gist/:lex/:recency).",
            :schema
-           {:text {:type :double},
-            :gist {:type :double},
-            :lex {:type :double},
-            :recency {:type :double}}},
+           {:text
+            {:type :double,
+             :description
+             "Weight of the query-to-scene-text cosine channel. Default 1.0 [verify: default lives in code]."},
+            :gist
+            {:type :double,
+             :description
+             "Weight of the query-to-scene-gist cosine channel. Default 1.0 [verify: default lives in code]."},
+            :lex
+            {:type :double,
+             :description
+             "Weight of the IDF-weighted lexical-overlap channel. Default 1.0 [verify: default lives in code]."},
+            :recency
+            {:type :double,
+             :description
+             "Weight of the recency-decay channel. Default 0.5 [verify: default lives in code]."}}},
           :inject
           {:type :map,
-           :schema {:full {:type :int}, :gists {:type :int}}}}}}}}}}}},
+           :description
+           "How many ranked search hits recall-at-open injects, split into full-text and gist-only tiers.",
+           :schema
+           {:full
+            {:type :int,
+             :description
+             "Number of top-ranked search hits injected with their full excerpt text. Default 1 [verify: default lives in code]."},
+            :gists
+            {:type :int,
+             :description
+             "Number of next-ranked search hits injected as gist lines only. Default 2 [verify: default lives in code]."}}}}}}}}}}}},
  :version "0.1.5",
  :berths
  #:isaac.session.episodes{:embedding-api
