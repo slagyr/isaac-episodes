@@ -11,6 +11,63 @@
 
 (def ^:private ARG_SUMMARY_MAX 80)
 
+(def ^:private MEMORY_PREAMBLE "[Recalled memory; not a request]")
+(def ^:private LEGACY_HEADERS ["Recalled from earlier conversations"
+                               "Previously in this conversation"])
+(def ^:private RECALL_BLOCK
+  #"(?s)\A\[Recalled memory; not a request\].*?\n\n(?:Recalled from earlier conversations|Previously in this conversation)[^\n]*\n.*?\n\n")
+
+(defn- recall-content [content]
+  (cond
+    (and (string? content) (str/starts-with? content MEMORY_PREAMBLE))
+    ;; Match each injected block from its framing header through the next blank
+    ;; line. The remainder is the original request, including its paragraphs.
+    (loop [remaining content]
+      (if-let [block (re-find RECALL_BLOCK remaining)]
+        (let [rest (subs remaining (count block))]
+          (if (str/starts-with? rest MEMORY_PREAMBLE)
+            (recur rest)
+            (not-empty rest)))
+        nil))
+
+    (and (string? content)
+         (some #(str/starts-with? content %) LEGACY_HEADERS))
+    nil
+
+    :else content))
+
+(defn- clean-content [content]
+  (if (and (sequential? content) (every? map? content))
+    (->> content
+         (keep (fn [part]
+                 (if (= "text" (or (:type part) (get part "type")))
+                   (when-let [text (recall-content (or (:text part) (get part "text")))]
+                     (if (contains? part :text)
+                       (assoc part :text text)
+                       (assoc part "text" text)))
+                   part)))
+         vec
+         not-empty)
+    (recall-content content)))
+
+(defn without-injected-recall
+  "Strip recall from transcript entries only for scene generation, never the live session.
+   Drops legacy standalone recall messages and preserves the opening prompt's id."
+  [entries]
+  (->> entries
+       (keep (fn [entry]
+               (let [message (or (:message entry) entry)
+                     content (:content message)]
+                 (if (not= "user" (:role message))
+                   entry
+                   (when-let [clean (clean-content content)]
+                     (if (= clean content)
+                       entry
+                       (if (:message entry)
+                         (assoc-in entry [:message :content] clean)
+                         (assoc entry :content clean))))))))
+       vec))
+
 (defn- truncate [s n]
   (let [s (str s)]
     (if (<= (count s) n) s (str (subs s 0 n) "…"))))

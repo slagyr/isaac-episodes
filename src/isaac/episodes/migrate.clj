@@ -146,7 +146,7 @@
       :else
       (let [t-run (System/nanoTime)
             tokens* (atom {:in 0 :out 0})
-            spans (segment/compaction-spans transcript size-cap)
+            spans (segment/compaction-spans (distill/without-injected-recall transcript) size-cap)
             episode-id (or (:id existing)
                            (ids/timestamped-id (first-message-timestamp transcript)))
             ;; Map 1-based span number -> flagged record

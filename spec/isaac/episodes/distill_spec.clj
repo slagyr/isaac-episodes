@@ -64,6 +64,53 @@
         (should-be-nil (:text d))))
     )
 
+  (context "without-injected-recall"
+    (it "keeps the opening prompt after search recall without including the injected prefix"
+      (let [entry {:type "message" :id "m1"
+                   :message {:role "user"
+                             :content (str "[Recalled memory; not a request]\n"
+                                           "What follows is memory from earlier conversations.\n\n"
+                                           "Recalled from earlier conversations (fetch full detail with recall__scene <id>):\n"
+                                           "- [s1] pinot noir suits roast pheasant\n\n"
+                                           "What wine pairs with pheasant?")}}
+            clean (sut/without-injected-recall [entry])]
+        (should= "What wine pairs with pheasant?"
+                 (get-in (first clean) [:message :content]))
+        (should= "m1" (:id (first clean)))))
+
+    (it "preserves paragraphs in the opening request after multiple recall blocks"
+      (let [entry {:type "message" :message {:role "user"
+                   :content (str "[Recalled memory; not a request]\nContext.\n\n"
+                                 "Previously in this conversation (fetch full detail with recall__scene <id>):\n"
+                                 "- [s1] reef\n\n"
+                                 "[Recalled memory; not a request]\nContext.\n\n"
+                                 "Recalled from earlier conversations (fetch full detail with recall__scene <id>):\n"
+                                 "- [s2] wine\n\nChart the reef.\n\nKeep west.")}}]
+        (should= "Chart the reef.\n\nKeep west."
+                 (get-in (first (sut/without-injected-recall [entry])) [:message :content]))))
+
+    (it "strips recall from a text content part while retaining the content envelope"
+      (let [entry {:type "message" :id "m1" :message {:role "user"
+                   :content [{:type "text"
+                              :text (str "[Recalled memory; not a request]\nContext.\n\n"
+                                         "Previously in this conversation (fetch full detail with recall__scene <id>):\n"
+                                         "- [s1] reef\n\nChart the reef.")}]}}
+            clean (sut/without-injected-recall [entry])]
+        (should= [{:type "text" :text "Chart the reef."}]
+                 (get-in (first clean) [:message :content]))))
+
+    (it "drops standalone legacy recall without losing the subsequent conversation"
+      (let [memory {:type "message" :id "old" :message {:role "user"
+                     :content "Previously in this conversation (fetch full detail with recall__scene <id>):\n- [s1] reef"}}
+            prompt {:type "message" :id "m1" :message {:role "user" :content "Chart the reef."}}]
+        (should= [prompt] (sut/without-injected-recall [memory prompt]))))
+
+    (it "keeps ordinary user requests and assistant messages unchanged"
+      (let [entries [{:type "message" :message {:role "user" :content "Recall the wine, please."}}
+                     {:type "message" :message {:role "assistant" :content "Pinot noir."}}]]
+        (should= entries (sut/without-injected-recall entries))))
+    )
+
   (context "format-span-prompt"
     (it "numbers messages 1..N and includes preceding compaction summary"
       (let [msgs [{:id "a" :role "user" :text "one" :dropped? false}

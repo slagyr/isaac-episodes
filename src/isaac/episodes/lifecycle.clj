@@ -463,7 +463,7 @@
               transcript (or transcript
                              (session-store/chronicle-transcript ss (backing-session-id ss existing)))
               sealed     (vec (remove nil? (store/list-scenes fs* root crew episode-id)))
-              tail       (tail-after-sealed (message-entries transcript) sealed)
+              tail       (tail-after-sealed (distill/without-injected-recall (message-entries transcript)) sealed)
               n          (count tail)
               new-raw    (embed-one cfg (last-exchange-text tail))
               prior-vec  (:open-scene-vector existing)

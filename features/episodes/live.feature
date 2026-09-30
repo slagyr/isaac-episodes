@@ -403,7 +403,6 @@ Feature: Episodes — live (policy + lifecycle)
       | message | user         | #"(?s)Recalled from earlier conversations.*What wine pairs with pheasant\?" |
       | message | assistant    | Pinot noir, as ever.                                                       |
 
-  @wip
     Scenario: sealing leaves recalled memory out of the new scenes
     The recall block is context, not conversation. The seal distills only
     what the episode said and did, so gists never describe remembering.
