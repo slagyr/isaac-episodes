@@ -403,6 +403,35 @@ Feature: Episodes — live (policy + lifecycle)
       | message | user         | #"(?s)Recalled from earlier conversations.*What wine pairs with pheasant\?" |
       | message | assistant    | Pinot noir, as ever.                                                       |
 
+  @wip
+    Scenario: recall reaches the opening prompt on the file-backed session store (isaac-klcb)
+    Production sessions live in the sidecar store, which conforms every write
+    to the agent's session schema. The held recall block must survive it.
+    Given the session store uses the file implementation
+    And the isaac EDN file "config/crew/cordelia.edn" exists with:
+      | path           | value            |
+      | model          | echo             |
+      | soul           | You are Cordelia |
+      | session-policy | episodes         |
+    And config file "isaac.edn" containing:
+      """
+      {:defaults {:frequencies {:crew "cordelia"}}
+       :episodes {:embedding {:api "grover" :model "mini-embed"}}}
+      """
+    And crew "cordelia" has a closed episode "2026-03-01-1000-ab12" with scenes:
+      | id                   | started-at          | ended-at            | gist                      | text                                    |
+      | 2026-03-01-1000-s1x1 | 2026-03-01T10:00:00 | 2026-03-01T10:05:00 | Wine pairing for pheasant | a light pinot noir suits roast pheasant |
+    When isaac is run with "episodes index --crew cordelia"
+    Given the following model responses are queued:
+      | type | content              | model |
+      | text | Pinot noir, as ever. | echo  |
+    When isaac is run with "prompt -m 'What wine pairs with pheasant?' --session supper-chat --crew cordelia"
+    Then the exit code is 0
+    And the last LLM request matches:
+      | key      | value                                                                 |
+      | messages | #"(?s)Recalled from earlier conversations.*recall__scene"             |
+      | messages | #"(?s)pinot noir suits roast pheasant.*What wine pairs with pheasant" |
+
     Scenario: sealing leaves recalled memory out of the new scenes
     The recall block is context, not conversation. The seal distills only
     what the episode said and did, so gists never describe remembering.
