@@ -2,32 +2,32 @@
  {:embed
   {:usage "embed [options] [text ...]",
    :summary "Embed text with the configured embedding API",
-   :namespace isaac.recall.embedding.cli,
+   :namespace isaac.session.episodes.recall.embedding.cli,
    :hosted true},
   :episodes
   {:usage "episodes [subcommand] [options]",
    :summary
    "Manage episodic memory (migrate sessions to scenes + gists)",
-   :namespace isaac.episodes.cli,
+   :namespace isaac.session.episodes.cli,
    :hosted true},
   :recall
   {:usage "recall [options] <query>",
    :summary "Rank a crew's indexed scenes against a query",
-   :namespace isaac.recall.cli,
+   :namespace isaac.session.episodes.recall.cli,
    :hosted true}},
  :isaac.session.episodes/embedding-api
- {:ollama {:namespace isaac.recall.embedding.ollama},
-  :embeddings {:namespace isaac.recall.embedding.embeddings},
-  :grover {:namespace isaac.recall.embedding}},
+ {:ollama {:namespace isaac.session.episodes.recall.embedding.ollama},
+  :embeddings {:namespace isaac.session.episodes.recall.embedding.embeddings},
+  :grover {:namespace isaac.session.episodes.recall.embedding}},
  :isaac.agent/session-policy
- {:episodes {:factory isaac.session.policy.episodes/create}},
- :factory isaac.episodes.module/create-module,
+ {:episodes {:factory isaac.session.episodes.policy/create}},
+ :factory isaac.session.episodes.module/create-module,
  :id :isaac.session.episodes,
- :handbook "isaac/episodes/handbook.md",
- :isaac/component {:episodes {:namespace isaac.episodes.service}},
+ :handbook "isaac/session/episodes/handbook.md",
+ :isaac/component {:episodes {:namespace isaac.session.episodes.service}},
  :isaac.agent/tools
- #:recall{:search {:factory isaac.episodes.tools/search-tool-factory},
-          :scene {:factory isaac.episodes.tools/scene-tool-factory}},
+ #:recall{:search {:factory isaac.session.episodes.tools/search-tool-factory},
+          :scene {:factory isaac.session.episodes.tools/scene-tool-factory}},
  :isaac.config/schema
  {:episodes
   {:schema
