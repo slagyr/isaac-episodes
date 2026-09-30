@@ -247,6 +247,7 @@
   (append-error! [_ name error] (store/append-error! store name error))
   (append-compaction! [_ name compaction] (store/append-compaction! store name compaction))
   (append-reckoning! [_ name reckoning] (store/append-reckoning! store name reckoning))
+  (append-checkpoint! [_ name checkpoint] (store/append-checkpoint! store name checkpoint))
   (prepare-turn! [_ name input]
     (when (and input (store/get-session store name))
       (let [session-id (session-id* name)

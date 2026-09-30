@@ -215,4 +215,10 @@
         (let [dir (str @root "/sessions/cordelia/lantern-room/episodes")
               kids (when (fs/exists? @mem dir) (fs/children @mem dir))]
           (should= 2 (count kids))))))
+
+  (it "implements every method of SessionPolicy (guard against protocol drift, isaac-rmbz)"
+    (let [proto-methods (->> (:sigs policy/SessionPolicy) vals (map (comp name :name)) set)
+          declared      (->> (class @pol) .getDeclaredMethods (map #(.getName %)) set)
+          missing       (remove #(contains? declared (clojure.lang.Compiler/munge %)) proto-methods)]
+      (should= [] missing)))
   )

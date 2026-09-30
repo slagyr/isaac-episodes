@@ -821,7 +821,6 @@ Feature: Episodes — live (policy + lifecycle)
       | event                       |
       | :session/compaction-started |
 
-  @wip
   Scenario: an episodes crew with a checkpoint cadence checkpoints and finishes its turn (isaac-rmbz)
     Field 2026-09-30: Mixmaster's turn died at its first checkpoint with an
     AbstractMethodError, because the episodes policy lacked append-checkpoint!.
