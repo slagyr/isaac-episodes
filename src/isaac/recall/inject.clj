@@ -171,13 +171,20 @@
   (when parent-id
     (vec (take THREAD_GISTS (store/list-scenes fs* root crew parent-id)))))
 
-(defn- hold-block! [session-store* session-id block]
-  (when (and session-store* session-id (not (str/blank? block)))
-    (let [pending (:pending-recall (session-store/get-session session-store* session-id))]
-      (session-store/update-session! session-store* session-id
-                                     {:pending-recall (if (str/blank? pending)
-                                                        block
-                                                        (str pending "\n\n" block))}))))
+(defn- hold-block!
+  "Hold a recall block on the open episode record itself, not on the agent's
+   session record: the agent's Session schema has no :pending-recall key, and
+   the production sidecar store conforms every write, silently stripping
+   anything the schema doesn't know about (isaac-klcb)."
+  [fs* root crew episode-id block]
+  (when (and fs* root crew episode-id (not (str/blank? block)))
+    (when-let [ep (store/read-episode fs* root crew episode-id)]
+      (let [pending (:pending-recall ep)]
+        (store/write-episode! fs* root
+                              (assoc ep :pending-recall (if (str/blank? pending)
+                                                          block
+                                                          (str pending "\n\n" block)))
+                              (store/list-scenes fs* root crew episode-id))))))
 
 (defn- log-cos
   "Cosine as logged. Grover stubs saturate at 1.0; clamp so operators
@@ -258,10 +265,10 @@
                                      #(mapv (partial scene-from-hit fs* root crew) %))
           found         (vec (concat (:full search) (:gists search)))]
       (when (seq thread-gists)
-        (hold-block! session-store backing (render-lineage-block thread-gists))
+        (hold-block! fs* root crew eid (render-lineage-block thread-gists))
         (record-refs! fs* root crew eid thread-gists query))
       (when (seq found)
-        (hold-block! session-store backing (render-search-block search))
+        (hold-block! fs* root crew eid (render-search-block search))
         (record-refs! fs* root crew eid found query))
       (ledger/append! fs* root crew cfg
                       {:kind :inject :session (or (:session-id episode) thread backing)

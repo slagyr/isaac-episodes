@@ -403,7 +403,6 @@ Feature: Episodes — live (policy + lifecycle)
       | message | user         | #"(?s)Recalled from earlier conversations.*What wine pairs with pheasant\?" |
       | message | assistant    | Pinot noir, as ever.                                                       |
 
-  @wip
     Scenario: recall reaches the opening prompt on the file-backed session store (isaac-klcb)
     Production sessions live in the sidecar store, which conforms every write
     to the agent's session schema. The held recall block must survive it.

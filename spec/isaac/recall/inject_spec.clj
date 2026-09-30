@@ -137,7 +137,7 @@
       (let [ep     (store/read-episode @mem root "cordelia" "open-ep")
             trans  (session-store/get-transcript @ss "open-ep")
             msgs   (filter #(= "message" (:type %)) trans)
-            block  (:pending-recall (session-store/get-session @ss "open-ep"))
+            block  (:pending-recall ep)
             text   (if (string? block) block (->> block (map :text) (str/join "\n")))]
         (should= 0 (count msgs))
         (should= 1 (count (:recalled-scenes ep)))
@@ -146,7 +146,7 @@
         (should-contain "Recalled from earlier conversations" text)
         (should-contain "pinot noir" text)))
 
-    (it "holds recall on the episode's :session-id when that is the backing store key"
+    (it "holds recall on the open episode even when its :session-id differs from its :id"
       (session-store/open-session! @ss "harbor-log" {:crew "cordelia" :cwd root})
       (store/write-episode! @mem root {:id "open-ep" :crew "cordelia" :status :open
                                        :session-id "harbor-log" :thread "harbor-log" :scene-ids []} [])
@@ -162,7 +162,7 @@
            :session-store @ss}))
       (let [trans (session-store/get-transcript @ss "harbor-log")
             msgs  (filter #(= "message" (:type %)) trans)
-            block (:pending-recall (session-store/get-session @ss "harbor-log"))
+            block (:pending-recall (store/read-episode @mem root "cordelia" "open-ep"))
             text  (if (string? block) block (->> block (map :text) (str/join "\n")))]
         (should= 0 (count msgs))
         (should= 0 (count (filter #(= "message" (:type %)) (session-store/get-transcript @ss "open-ep"))))
@@ -273,7 +273,7 @@
              :query "Back to the reef passage" :action :chained
              :session-store @ss}))
         (let [ep    (store/read-episode @mem root "cordelia" "open-ep")
-              text  (:pending-recall (session-store/get-session @ss "open-ep"))]
+              text  (:pending-recall ep)]
           (should= 1 (count (:recalled-scenes ep)))
           (should-contain "Previously in this conversation" text)
           (should= 1 (count (re-seq #"Wine pairing for pheasant" text))))))

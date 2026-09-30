@@ -235,14 +235,23 @@
       (when (and query (contains? #{:opened :chained} (:action resolved)))
         (recall-ahead! {:store store :crew crew :session-id session-id :query query :cfg (runtime-cfg)}
                        resolved))
-      (let [pending (:pending-recall (store/get-session store session-id))
+      (let [fs*     (runtime-fs)
+            root    (runtime-root)
+            ;; The held block lives on the open episode record, not the
+            ;; agent's session record (isaac-klcb): the agent Session schema
+            ;; has no :pending-recall key, and the production sidecar store
+            ;; conforms every write, silently stripping anything it doesn't
+            ;; know about.
+            open-ep (find-open fs* root crew session-id)
+            pending (:pending-recall open-ep)
             user?   (= "user" (or (:role message) (get-in message [:message :role])))
             message (if (and user? (seq pending))
                       (update message :content #(str pending "\n\n" %))
                       message)
             result  (store/append-message! store session-id message)]
-        (when (and user? (seq pending))
-          (store/update-session! store session-id {:pending-recall nil}))
+        (when (and user? (seq pending) open-ep)
+          (episode-store/write-episode! fs* root (dissoc open-ep :pending-recall)
+                                        (episode-store/list-scenes fs* root crew (:id open-ep))))
         result)))
   (append-error! [_ name error] (store/append-error! store name error))
   (append-compaction! [_ name compaction] (store/append-compaction! store name compaction))

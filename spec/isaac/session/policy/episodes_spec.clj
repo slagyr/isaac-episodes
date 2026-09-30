@@ -72,14 +72,23 @@
         (should= "cordelia" (:crew @called)))))
 
   (it "prefixes held recall only to the next user prompt and clears it"
+    ;; The held block lives on the open episode record, not the agent's
+    ;; session record (isaac-klcb), so seed it there once the episode
+    ;; container exists.
     (policy/open-session! @pol "harbor-log" {:crew "cordelia" :cwd @root})
-    (session-store/update-session! @ss "harbor-log" {:pending-recall "[Recalled memory]\nPast voyages"})
     (policy/append-message! @pol "harbor-log" {:role "assistant" :content "Ready"})
-    (should= "[Recalled memory]\nPast voyages" (:pending-recall (session-store/get-session @ss "harbor-log")))
+    (let [open? #(= :open (:status %))
+          open  (first (filter open? (episode-store/list-episodes @mem @root "cordelia")))]
+      (episode-store/write-episode! @mem @root
+        (assoc open :pending-recall "[Recalled memory]\nPast voyages")
+        (episode-store/list-scenes @mem @root "cordelia" (:id open)))
+      (should= "[Recalled memory]\nPast voyages"
+               (:pending-recall (episode-store/read-episode @mem @root "cordelia" (:id open)))))
     (policy/append-message! @pol "harbor-log" {:role "user" :content "Chart the reef"})
     (should= "[Recalled memory]\nPast voyages\n\nChart the reef"
              (get-in (last (session-store/get-transcript @ss "harbor-log")) [:message :content 0 :text]))
-    (should-be-nil (:pending-recall (session-store/get-session @ss "harbor-log")))
+    (let [open (first (filter #(= :open (:status %)) (episode-store/list-episodes @mem @root "cordelia")))]
+      (should-be-nil (:pending-recall open)))
     (policy/append-message! @pol "harbor-log" {:role "user" :content "Mark the buoys"})
     (should= "Mark the buoys"
              (get-in (last (session-store/get-transcript @ss "harbor-log")) [:message :content 0 :text])))
