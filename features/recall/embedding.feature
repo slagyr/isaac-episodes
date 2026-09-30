@@ -105,7 +105,7 @@ Feature: Embedding Seam
     Then the stderr matches:
       | pattern                                    |
       | crew\.cordelia\.episodes\.recall\.half-life |
-      | bad value: soon                            |
+      | can't coerce "soon" to int                 |
     And the exit code is 1
 
   Scenario: config validation rejects an unknown embedding api
