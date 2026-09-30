@@ -820,3 +820,29 @@ Feature: Episodes — live (policy + lifecycle)
     And the log does not have entries matching:
       | event                       |
       | :session/compaction-started |
+
+  @wip
+  Scenario: an episodes crew with a checkpoint cadence checkpoints and finishes its turn (isaac-rmbz)
+    Field 2026-09-30: Mixmaster's turn died at its first checkpoint with an
+    AbstractMethodError, because the episodes policy lacked append-checkpoint!.
+    Given config:
+      | key        | value  |
+      | log.output | memory |
+    And the isaac EDN file "config/crew/cordelia.edn" exists with:
+      | path                   | value            |
+      | model                  | echo             |
+      | soul                   | You are Cordelia |
+      | session-policy         | episodes         |
+      | cycle.limit            | 10               |
+      | cycle.checkpoint-every | 1                |
+    And the crew "cordelia" allows tools: recall/scene
+    And the following model responses are queued:
+      | type     | tool_call     | arguments                           | content      | model |
+      | toolCall | recall__scene | {"scene-id":"2026-01-01-0000-none"} |              | echo  |
+      | text     |               |                                     | Watch logged | echo  |
+    When isaac is run with "prompt -m 'Log the watch' --session lantern-watch --crew cordelia"
+    Then the stdout contains "Watch logged"
+    And the exit code is 0
+    And the log has entries matching:
+      | level | event                   | session       | cycle |
+      | :info | :turn/checkpoint-nudged | lantern-watch | 1     |
