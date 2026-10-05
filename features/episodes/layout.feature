@@ -161,7 +161,7 @@ Feature: Episodes storage layout — one directory per session under sessions/<c
       | type | content | model |
       | text | Aye     | echo  |
       | text | Lit     | echo  |
-    When the user sends "Status?" on session "harbor-log"
+    When the user sends "Status?" on session "harbor-log" as crew "main"
     And the user sends "Light the lamp" on session "lantern-room" as crew "cordelia"
     Then the isaac file "sessions/main/harbor-log/session.edn" EDN contains:
       | path | value      |
