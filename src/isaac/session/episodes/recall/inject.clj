@@ -3,6 +3,7 @@
   (:require
     [clojure.string :as str]
     [isaac.foundation.config.loader :as loader]
+    [isaac.session.episodes.distill :as distill]
     [isaac.session.episodes.crew :as episode-crew]
     [isaac.session.episodes.store :as store]
     [isaac.foundation.fs :as fs]
@@ -84,6 +85,35 @@
 (defn render-lineage-block [scenes]
   (when (seq scenes)
     (framed LINEAGE_HEADER (map format-line (take THREAD_GISTS scenes)))))
+
+(def CONTINUATION_HEADER "Where this conversation left off (it may still be open):")
+(def CONTINUATION_MAX_CHARS 2000)
+(def CONTINUATION_MARKER "[truncated]")
+
+(defn- cap-continuation [text max-chars]
+  (let [text (str text)
+        limit (max 0 (long max-chars))]
+    (if (<= (count text) limit)
+      text
+      (str (subs text 0 limit) CONTINUATION_MARKER))))
+
+(defn render-continuation-block [scene user assistant max-chars]
+  (let [scene-text (when (and scene (not (str/blank? (:gist scene))))
+                     (str "Last scene: " (:gist scene) "\n"))
+        user-text  (when user (str "User: " user "\n"))
+        reply-text (when assistant (str "Assistant: " assistant "\n"))
+        body       (str scene-text user-text reply-text)
+        ;; The last reply is the most important part of an open offer. Keep its
+        ;; beginning even when the scene and question exhaust a small cap.
+        capped     (if (> (count body) max-chars)
+                     (if (and reply-text (> (count reply-text) max-chars))
+                       (cap-continuation reply-text max-chars)
+                       (cap-continuation body max-chars))
+                     body)]
+    (when-not (str/blank? body)
+      (str CONTINUATION_HEADER "\n"
+           "What follows is the end of the previous episode. If it left something open — a question, an offer — you may continue it now.\n"
+           capped))))
 
 (defn- hit-best-cos [hit]
   (max (double (or (:text hit) 0.0))
@@ -171,6 +201,19 @@
   (when parent-id
     (vec (take THREAD_GISTS (store/list-scenes fs* root crew parent-id)))))
 
+(defn- last-exchange [session-store backing]
+  (when (and session-store backing)
+    (let [messages (->> (session-store/chronicle-transcript session-store backing)
+                        (filter #(= "message" (:type %)))
+                        (map distill/distill-entry)
+                        (filter #(contains? #{"user" "assistant"} (:role %)))
+                        (remove #(str/blank? (:text %))))
+          assistant (last (filter #(= "assistant" (:role %)) messages))
+          user      (last (filter #(and (= "user" (:role %))
+                                       (or (nil? assistant)
+                                           (not (pos? (compare (:id %) (:id assistant)))))) messages))]
+      {:user (:text user) :assistant (:text assistant)})))
+
 (defn- hold-block!
   "Hold a recall block on the open episode record itself, not on the agent's
    session record: the agent's Session schema has no :pending-recall key, and
@@ -249,6 +292,12 @@
                       (:session-id episode)
                       eid)
           parent       (:parent-episode episode)
+          last-scene   (when parent (last (store/list-scenes fs* root crew parent)))
+          exchange     (when parent (last-exchange session-store backing))
+          continuation (when parent
+                         (render-continuation-block last-scene (:user exchange) (:assistant exchange)
+                                                    (or (get-in cfg [:episodes :recall :continuation :max-chars])
+                                                        CONTINUATION_MAX_CHARS)))
           floor        (score/resolve-floor cfg {})
           lineage      (if (and parent (= :chained action))
                          (mapv #(assoc % :origin-episode parent) (lineage-scenes fs* root crew parent))
@@ -264,6 +313,8 @@
           search        (update-vals (:search selected)
                                      #(mapv (partial scene-from-hit fs* root crew) %))
           found         (vec (concat (:full search) (:gists search)))]
+      (when continuation
+        (hold-block! fs* root crew eid continuation))
       (when (seq thread-gists)
         (hold-block! fs* root crew eid (render-lineage-block thread-gists))
         (record-refs! fs* root crew eid thread-gists query))

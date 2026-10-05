@@ -9,6 +9,14 @@
     (should= true (:builtin? (tools/search-tool-factory {})))
     (should= true (:builtin? (tools/scene-tool-factory {}))))
 
+  (it "declares the capped continuation setting for both global and crew episodes"
+    (let [manifest (edn/read-string (slurp "resources/isaac-manifest.edn"))]
+      (doseq [path [[:isaac.config/schema :episodes :schema :schema :recall :schema :continuation :schema :max-chars]
+                    [:isaac.config/schema :crew :schema :value-spec :schema :episodes :schema
+                     :recall :schema :continuation :schema :max-chars]]]
+        (should= :int (get-in manifest (conj path :type)))
+        (should (seq (get-in manifest (conj path :description)))))))
+
   (it "contributes episodes policy, tools, CLIs, and embedding APIs"
     (let [manifest (edn/read-string (slurp "resources/isaac-manifest.edn"))]
       (should (contains? (:isaac.agent/session-policy manifest) :episodes))

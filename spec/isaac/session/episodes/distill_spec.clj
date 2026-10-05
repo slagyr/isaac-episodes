@@ -64,6 +64,18 @@
         (should-be-nil (:text d))))
     )
 
+  (it "removes the continuation seed from a new scene while retaining the actual request"
+    (let [entry {:type "message" :id "user-2" :message {:role "user" :content
+                 (str "Where this conversation left off (it may still be open):\n"
+                      "What follows is the end of the previous episode. If it left something open — you may continue it now.\n"
+                      "Last scene: Log rotation offered\nUser: The disk is full\nAssistant: Want me to rotate the logs?\n\n"
+                      "[Recalled memory; not a request]\n"
+                      "What follows is memory from earlier conversations, supplied for context.\n\n"
+                      "Previously in this conversation (fetch full detail with recall__scene <id>):\n"
+                      "- [s1 · 2026-03-01] Log rotation offered\n\nYes please do it")}}]
+      (should= "Yes please do it"
+               (get-in (first (sut/without-injected-recall [entry])) [:message :content]))))
+
   (context "without-injected-recall"
     (it "keeps the opening prompt after search recall without including the injected prefix"
       (let [entry {:type "message" :id "m1"

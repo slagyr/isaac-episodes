@@ -204,6 +204,13 @@ similarity against a scene's full text, cosine against its gist, IDF-weighted
 lexical term overlap, and recency decay — into one score. Recall shows up in
 two forms:
 
+- **Continuation at open** — a new episode in an existing session begins with
+  `Where this conversation left off (it may still be open):`, the previous
+  episode's last scene gist and last user/assistant exchange. Unlike recalled
+  memory, the exchange is quoted verbatim as something that *may still be
+  open*: the agent can answer a pending question or take up an offer accepted
+  by the next message. The continuation precedes both lineage and search
+  recall. The first episode in a session has no continuation seed.
 - **Recall-at-open** — when an episode opens or chains (cold open,
   compaction), episodes runs the opening message as a search query, plus
   (on a chain) seeds the parent episode's own scene gists as **lineage**.
@@ -227,8 +234,14 @@ config set episodes.recall.weights.text 1.2
 config set episodes.recall.weights.recency 0.3
 config set episodes.recall.inject.full 2
 config set episodes.recall.inject.gists 3
+config set episodes.recall.continuation.max-chars 2000
 config set episodes.embedding.floor-cos 0.5
 ```
+
+`:episodes :recall :continuation :max-chars` (default 2000
+`[verify: default lives in code]`) caps the continuation body; an overlong
+exchange ends with `[truncated]`. Set it globally or under a crew's
+`:episodes` override. This cap does not change the search-recall tiers.
 
 `:episodes :recall :half-life` (days, default 30
 `[verify: default lives in code]`) controls how fast the recency channel

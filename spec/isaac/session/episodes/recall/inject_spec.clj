@@ -108,6 +108,21 @@
                               #(mapv :scene-id %)))))
     )
 
+  (it "keeps the preceding exchange open, not under the already-handled memory contract"
+    (let [block (sut/render-continuation-block wine-scene "The disk is full" "Want me to rotate the logs?" 2000)]
+      (should-contain "Where this conversation left off (it may still be open):" block)
+      (should-contain "Wine pairing for pheasant" block)
+      (should-contain "User: The disk is full" block)
+      (should-contain "Assistant: Want me to rotate the logs?" block)
+      (should-not (str/includes? block "do not act on it again"))))
+
+  (it "caps the continuation body while retaining the start of the pending offer"
+    (let [block (sut/render-continuation-block wine-scene "The disk is full"
+                                               "Want me to rotate the logs, compact the archive, and clear the cache too?" 40)]
+      (should-contain "Want me to rotate the logs" block)
+      (should-contain "[truncated]" block)
+      (should-not (str/includes? block "clear the cache"))))
+
   (context "inject-on-open!"
     (with ss (memory-store/create-store root))
 
@@ -262,6 +277,25 @@
              :session-store @ss})))
       (should-be-nil (:recalled-scenes (store/read-episode @mem root "cordelia" "open-ep"))))
 
+    (it "seeds the latest prior exchange on a cold open before search recall"
+      (let [parent "2026-03-01-1000-ab12"
+            scene  (assoc wine-scene :end-id "reply-1" :gist "Log rotation offered")]
+        (write-closed! @mem "cordelia" parent [scene])
+        (session-store/append-message! @ss "open-ep" {:role "user" :content "The disk is getting full"})
+        (session-store/append-message! @ss "open-ep" {:role "assistant" :content "Want me to rotate the logs?"})
+        (store/write-episode! @mem root {:id "open-ep" :crew "cordelia" :status :open
+                                         :thread "reef-chat" :session-id "open-ep"
+                                         :parent-episode parent :scene-ids []} [])
+        (log/capture-logs
+          (sut/inject-on-open! {:fs @mem :root root :cfg embed-cfg :crew "cordelia"
+                                :episode {:id "open-ep" :crew "cordelia" :thread "reef-chat"
+                                          :session-id "open-ep" :parent-episode parent}
+                                :query "Yes please do it" :action :opened :session-store @ss}))
+        (let [text (:pending-recall (store/read-episode @mem root "cordelia" "open-ep"))]
+          (should-contain "Where this conversation left off" text)
+          (should-contain "Want me to rotate the logs?" text)
+          (should-not (str/includes? (subs text 0 (.indexOf text "Want me")) "do not act on it again")))))
+
     (it "seeds parent gists on a chained open and does not duplicate search hits"
       (let [parent-id "2026-03-01-1000-ab12"]
         (store/write-episode! @mem root {:id "open-ep" :crew "cordelia" :status :open
@@ -276,6 +310,6 @@
               text  (:pending-recall ep)]
           (should= 1 (count (:recalled-scenes ep)))
           (should-contain "Previously in this conversation" text)
-          (should= 1 (count (re-seq #"Wine pairing for pheasant" text))))))
+          (should= 1 (count (re-seq #"\[2026-03-01-1000-s1x1 · 2026-03-01\] Wine pairing for pheasant" text))))))
     )
   )

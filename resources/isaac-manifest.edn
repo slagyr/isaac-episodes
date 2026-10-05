@@ -129,6 +129,11 @@
          {:type :double,
           :description
           "Weight of the recency-decay channel. Default 0.5 [verify: default lives in code]."}}},
+       :continuation
+       {:type :map,
+        :description "Seed the previous episode's last scene and exchange as possibly still open.",
+        :schema {:max-chars {:type :int,
+                             :description "Maximum continuation body characters before truncation. Default 2000 [verify: default lives in code]."}}},
        :inject
        {:type :map,
         :description
@@ -247,6 +252,11 @@
             {:type :double,
              :description
              "Weight of the recency-decay channel. Default 0.5 [verify: default lives in code]."}}},
+          :continuation
+          {:type :map,
+           :description "Seed the previous episode's last scene and exchange as possibly still open.",
+           :schema {:max-chars {:type :int,
+                                :description "Maximum continuation body characters before truncation. Default 2000 [verify: default lives in code]."}}},
           :inject
           {:type :map,
            :description

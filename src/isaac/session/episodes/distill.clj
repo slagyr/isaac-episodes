@@ -12,13 +12,18 @@
 (def ^:private ARG_SUMMARY_MAX 80)
 
 (def ^:private MEMORY_PREAMBLE "[Recalled memory; not a request]")
+(def ^:private CONTINUATION_PREAMBLE "Where this conversation left off (it may still be open):")
 (def ^:private LEGACY_HEADERS ["Recalled from earlier conversations"
                                "Previously in this conversation"])
 (def ^:private RECALL_BLOCK
   #"(?s)\A\[Recalled memory; not a request\].*?\n\n(?:Recalled from earlier conversations|Previously in this conversation)[^\n]*\n.*?\n\n")
 
 (defn- recall-content [content]
-  (cond
+  (let [content (if (and (string? content) (str/starts-with? content CONTINUATION_PREAMBLE))
+                  (when-let [end (str/index-of content "\n\n")]
+                    (subs content (+ end 2)))
+                  content)]
+    (cond
     (and (string? content) (str/starts-with? content MEMORY_PREAMBLE))
     ;; Match each injected block from its framing header through the next blank
     ;; line. The remainder is the original request, including its paragraphs.
@@ -34,7 +39,7 @@
          (some #(str/starts-with? content %) LEGACY_HEADERS))
     nil
 
-    :else content))
+    :else content)))
 
 (defn- clean-content [content]
   (if (and (sequential? content) (every? map? content))
