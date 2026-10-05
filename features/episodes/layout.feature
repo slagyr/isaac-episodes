@@ -40,8 +40,6 @@ Feature: Episodes storage layout — one directory per session under sessions/<c
       | path           | value        |
       | id             | lantern-room |
       | crew           | cordelia     |
-      | context-mode   | episodes         |
-      | observers      | [:episodes]      |
     And the directory "sessions/cordelia/lantern-room/episodes" has exactly 1 file
     And an episode exists for crew "cordelia" matching:
       | key        | value        |
@@ -109,8 +107,6 @@ Feature: Episodes storage layout — one directory per session under sessions/<c
       | path           | value        |
       | id             | lantern-room |
       | crew           | cordelia     |
-      | context-mode   | episodes         |
-      | observers      | [:episodes]      |
     And session "lantern-room" has transcript matching:
       | type    | message.role | message.content |
       | message | user         | new input       |
