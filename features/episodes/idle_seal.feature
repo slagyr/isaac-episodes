@@ -29,7 +29,6 @@ Feature: Idle sealing — a quiet thread becomes recallable within minutes
                   :embedding {:api "grover" :model "mini-embed"}}}
       """
 
-  @wip
   Scenario: an idle thread seals its tail on the tick and stays open
     Given the current time is "2026-03-01T10:00:00"
     And the following model responses are queued:
@@ -49,7 +48,6 @@ Feature: Idle sealing — a quiet thread becomes recallable within minutes
       | Reef passage charted | #"(?s)keep west" | idle        |
     And the index for crew "cordelia" has a row for gist "Reef passage charted"
 
-  @wip
   Scenario: a crew's :episodes :seal :idle-minutes overrides the global idle time
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path                       | value            |
@@ -74,7 +72,6 @@ Feature: Idle sealing — a quiet thread becomes recallable within minutes
       | gist                 | text             | seal-reason |
       | Reef passage charted | #"(?s)keep west" | idle        |
 
-  @wip
   Scenario: a warm thread is left alone
     Given the current time is "2026-03-01T10:00:00"
     And the following model responses are queued:
@@ -87,7 +84,6 @@ Feature: Idle sealing — a quiet thread becomes recallable within minutes
       | status | open  |
     And that episode has 0 scenes
 
-  @wip
   Scenario: resuming after an idle seal continues the same episode
     Given the current time is "2026-03-01T10:00:00"
     And the following model responses are queued:
@@ -110,7 +106,6 @@ Feature: Idle sealing — a quiet thread becomes recallable within minutes
       | Reef passage charted | #"(?s)keep west"    |           |
       | Buoy tooling         | #"(?s)Buoys marked" | #".+"     |
 
-  @wip
   Scenario: another thread can recall the sealed scene within minutes
     Given the current time is "2026-03-01T10:00:00"
     And the following model responses are queued:
@@ -129,7 +124,6 @@ Feature: Idle sealing — a quiet thread becomes recallable within minutes
       | messages | #"(?s)Recalled from earlier conversations.*recall__scene" |
       | messages | #"(?s)Reef passage charted"                            |
 
-  @wip
   Scenario: a cold episode closes on the tick and the next message chains a successor
     Given the current time is "2026-03-01T10:00:00"
     And the following model responses are queued:
@@ -148,7 +142,6 @@ Feature: Idle sealing — a quiet thread becomes recallable within minutes
     Then crew "cordelia" has 2 episodes
     And the episodes for crew "cordelia" on thread "reef-chat" chain by lineage
 
-  @wip
   Scenario: an open episode with nothing to seal is deleted by the TTL sweep, once, and the log says so (isaac-9tjo)
     Field 2026-09-09/10: six successor episodes whose backing transcripts held
     only the compaction summary could never be sealed (nothing to segment →
@@ -187,7 +180,6 @@ Feature: Idle sealing — a quiet thread becomes recallable within minutes
       | event             | episode           |
       | :episodes/closing | 20260301100000000 |
 
-  @wip
   Scenario: the worker logs one summary per tick (isaac-a0wp)
     Given the current time is "2026-03-01T10:00:00"
     And the following model responses are queued:
@@ -199,7 +191,6 @@ Feature: Idle sealing — a quiet thread becomes recallable within minutes
       | level | event           | episodes-examined | sealed | closed | elapsed-ms |
       | :info | :episodes/tick  | 1                 | 0      | 0      | #*         |
 
-  @wip
   Scenario: an unchanged episode is not re-read on the next tick (isaac-a0wp)
     Given the current time is "2026-03-01T10:00:00"
     And the following model responses are queued:
@@ -213,7 +204,6 @@ Feature: Idle sealing — a quiet thread becomes recallable within minutes
       | level | event          | episodes-examined | transcript-reads |
       | :info | :episodes/tick | 1                 | 0                |
 
-  @wip
   Scenario: repeated seal failures report a streak instead of one warn per tick (isaac-a0wp)
     Given the current time is "2026-03-01T10:00:00"
     And the following model responses are queued:

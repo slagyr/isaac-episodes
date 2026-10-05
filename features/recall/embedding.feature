@@ -94,7 +94,6 @@ Feature: Embedding Seam
 
   # ----- Validation -----
 
-  @wip
   Scenario: config validation checks a crew's :episodes overrides
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path                      | value            |

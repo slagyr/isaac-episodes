@@ -15,7 +15,6 @@ Feature: Episode sessions are named like every other session (isaac-7rce)
       | context-mode   | episodes         |
       | observers      | [:episodes]      |
 
-  @wip
   Scenario: an explicit --session keeps its name as the session id
     Given the following model responses are queued:
       | type | content            | model |
@@ -32,7 +31,6 @@ Feature: Episode sessions are named like every other session (isaac-7rce)
       | status     | open      |
       | session-id | reef-chat |
 
-  @wip
   Scenario: a start with no session id is named by the naming strategy, not by the episode clock
     Given config:
       | sessions.naming-strategy | sequential |

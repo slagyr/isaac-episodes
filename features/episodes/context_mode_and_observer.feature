@@ -32,7 +32,6 @@ Feature: Episodes runs as a context mode plus a session observer (isaac-ka10)
                   :embedding {:api "grover" :model "mini-embed"}}}
       """
 
-  @wip
   Scenario: a crew on the episodes context mode and observer gets a cold open
     Given the current time is "2026-03-01T10:00:00"
     And the following model responses are queued:
@@ -52,7 +51,6 @@ Feature: Episodes runs as a context mode plus a session observer (isaac-ka10)
       | key      | value                                   |
       | messages | #"(?s)Where this conversation left off" |
 
-  @wip
   Scenario: the observer alone records episodes while the crew keeps full context
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value |
@@ -84,7 +82,6 @@ Feature: Episodes runs as a context mode plus a session observer (isaac-ka10)
       | messages[3].content | Yes please do it        |
     And the last LLM request does not contain "Where this conversation left off"
 
-  @wip
   Scenario: a reset crew with the observer still records scenes
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value |
@@ -104,7 +101,6 @@ Feature: Episodes runs as a context mode plus a session observer (isaac-ka10)
       | gist                 |
       | Log rotation offered |
 
-  @wip
   Scenario: a one-turn --with-context-mode full skips the cold open and the observer keeps recording
     Given the current time is "2026-03-01T10:00:00"
     And the following model responses are queued:
@@ -125,7 +121,6 @@ Feature: Episodes runs as a context mode plus a session observer (isaac-ka10)
       | key                 | value                    |
       | messages[1].content | The disk is getting full |
 
-  @wip
   Scenario: the episodes context mode without its observer fails validation
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path      | value   |

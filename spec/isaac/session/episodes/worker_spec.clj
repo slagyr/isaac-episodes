@@ -20,7 +20,7 @@
 
   (it "uses the live config snapshot on a tick instead of reloading"
     (let [loads (atom 0)
-          cfg   {:crew {"cordelia" {:session-policy :episodes}}}]
+          cfg   {:crew {"cordelia" {:observers [:episodes]}}}]
       (with-redefs [loader/snapshot     (fn [_] cfg)
                     loader/load-config! (fn [& _]
                                           (swap! loads inc)
@@ -32,7 +32,7 @@
 
   (it "loads config from the isaac root when the snapshot is empty"
     (let [loads (atom 0)
-          cfg   {:crew {"cordelia" {:session-policy :episodes}}}]
+          cfg   {:crew {"cordelia" {:observers [:episodes]}}}]
       (with-redefs [loader/snapshot     (fn [_] nil)
                     loader/load-config! (fn [& _]
                                           (swap! loads inc)

@@ -14,7 +14,6 @@ Feature: Episodes — live (policy + lifecycle)
 
   # ----- Open -----
 
-    @wip
     Scenario: first prompt on an episode crew opens an episode
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |
@@ -43,7 +42,6 @@ Feature: Episodes — live (policy + lifecycle)
 
   # ----- Warm append -----
 
-    @wip
     Scenario: warm prompts append to the open episode
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |
@@ -74,7 +72,6 @@ Feature: Episodes — live (policy + lifecycle)
 
   # ----- Cold continuation -----
 
-    @wip
     Scenario: cold prompts close the episode and chain a successor
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |
@@ -114,7 +111,6 @@ Feature: Episodes — live (policy + lifecycle)
       | message | user         | #"(?s).*Set the watch rotation" |
       | message | assistant    | Watches dogged         |
 
-    @wip
     Scenario: a cold prompt starts the new episode with an empty transcript, recall only (isaac-1vx0)
     Field 2026-09-29 13:51Z (yopp ACP session a6c4, idle ~20h): the first
     message ran the compaction check against yesterday's gauge (930,470) on a
@@ -177,7 +173,6 @@ Feature: Episodes — live (policy + lifecycle)
 
   # ----- Seal at close -----
 
-    @wip
     Scenario: closing seals the episode's transcript into scenes
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |
@@ -216,7 +211,6 @@ Feature: Episodes — live (policy + lifecycle)
 
   # ----- Compaction closes -----
 
-    @wip
     Scenario: compaction closes the episode and seeds the successor
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |
@@ -267,7 +261,6 @@ Feature: Episodes — live (policy + lifecycle)
 
   # ----- Explicit close -----
 
-    @wip
     Scenario: explicit close seals now; the next prompt chains
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |
@@ -321,7 +314,6 @@ Feature: Episodes — live (policy + lifecycle)
 
   # ----- Operator visibility -----
 
-    @wip
     Scenario: episodes list shows the crew's chain
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |
@@ -357,7 +349,6 @@ Feature: Episodes — live (policy + lifecycle)
 
   # ----- Recall at open (isaac-h5dk) -----
 
-    @wip
     Scenario: recall-at-open injects matched memory into the opening prompt
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |
@@ -389,7 +380,6 @@ Feature: Episodes — live (policy + lifecycle)
       | messages | #"(?s)\[2026-03-01-1000-s1x1 · 2026-03-01\] Wine pairing for pheasant" |
       | messages | #"(?s)pinot noir suits roast pheasant.*What wine pairs with pheasant"  |
 
-    @wip
     Scenario: a reset-mode crew receives its recall on the prompt message
     A :context-mode :reset request carries only the last transcript entry.
     Recall rides that entry, ahead of the prompt, instead of standing alone
@@ -425,7 +415,6 @@ Feature: Episodes — live (policy + lifecycle)
       | message | user         | #"(?s)Recalled from earlier conversations.*What wine pairs with pheasant\?" |
       | message | assistant    | Pinot noir, as ever.                                                       |
 
-    @wip
     Scenario: recall reaches the opening prompt on the file-backed session store (isaac-klcb)
     Production sessions live in the sidecar store, which conforms every write
     to the agent's session schema. The held recall block must survive it.
@@ -455,7 +444,6 @@ Feature: Episodes — live (policy + lifecycle)
       | messages | #"(?s)Recalled from earlier conversations.*recall__scene"             |
       | messages | #"(?s)pinot noir suits roast pheasant.*What wine pairs with pheasant" |
 
-    @wip
     Scenario: sealing leaves recalled memory out of the new scenes
     The recall block is context, not conversation. The seal distills only
     what the episode said and did, so gists never describe remembering.
@@ -497,7 +485,6 @@ Feature: Episodes — live (policy + lifecycle)
     And scene 1 of that episode does not contain "pinot noir suits roast pheasant"
     And the last LLM request does not mention recall
 
-    @wip
     Scenario: below-floor opens inject nothing
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |
@@ -525,7 +512,6 @@ Feature: Episodes — live (policy + lifecycle)
 
   # ----- Lineage seed (isaac-h5dk) -----
 
-    @wip
     Scenario: cold continuation seeds parent gists by lineage, and the last exchange too (isaac-mwqs)
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |
@@ -567,7 +553,6 @@ Feature: Episodes — live (policy + lifecycle)
 
   # ----- Index at close (isaac-h5dk) -----
 
-    @wip
     Scenario: closing indexes the sealed scenes immediately
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |
@@ -601,7 +586,6 @@ Feature: Episodes — live (policy + lifecycle)
 
   # ----- Embedding optional / catch-up (isaac-h5dk) -----
 
-    @wip
     Scenario: episodes work without embedding; indexing catches up when it arrives
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |
@@ -640,7 +624,6 @@ Feature: Episodes — live (policy + lifecycle)
 
   # ----- Live sealing (isaac-bh17) -----
 
-    @wip
     Scenario: the size cap seals mid-episode, keeping the trailing scene open
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |
@@ -682,7 +665,6 @@ Feature: Episodes — live (policy + lifecycle)
       | 1\. \S+\s+.*lex 1\.0\d*.*terms \[pheasant\] |
     And the exit code is 0
 
-    @wip
     Scenario: topic drift seals the finished topic well under the size cap
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |
@@ -717,7 +699,6 @@ Feature: Episodes — live (policy + lifecycle)
       | gist                      | text              |
       | Wine pairing for pheasant | #"(?s)pinot noir" |
 
-    @wip
     Scenario: a false drift trigger seals nothing and harms nothing
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |
@@ -750,7 +731,6 @@ Feature: Episodes — live (policy + lifecycle)
       | status | open  |
     And that episode has no sealed scenes
 
-    @wip
     Scenario: cont marks resolve to scene ids at seal
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |
@@ -791,7 +771,6 @@ Feature: Episodes — live (policy + lifecycle)
       | Regatta scheduling        | #"(?s)race is Saturday" |                                |
       | Dessert wine pairing      | #"(?s)late harvest"     | #"\d{17}" |
 
-    @wip
     Scenario: without embedding, drift is inert but the size cap still seals
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |
@@ -826,7 +805,6 @@ Feature: Episodes — live (policy + lifecycle)
       | Wine pairing for pheasant | #"(?s)pinot noir" |
     And no index exists for crew "cordelia"
 
-  @wip
   Scenario: compaction on an episodes session hands the turn to the successor and measures progress there (isaac-jom5)
     Field 2026-09-09 21:10–21:21Z (marvin ACP episode gv5a, 442 entries, 377K
     provider tokens): compact-close! closed the episode and opened a successor
@@ -894,7 +872,6 @@ Feature: Episodes — live (policy + lifecycle)
       | event                       |
       | :session/compaction-started |
 
-  @wip
   Scenario: an episodes crew with a checkpoint cadence checkpoints and finishes its turn (isaac-rmbz)
     Field 2026-09-30: Mixmaster's turn died at its first checkpoint with an
     AbstractMethodError, because the episodes policy lacked append-checkpoint!.

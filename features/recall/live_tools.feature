@@ -10,7 +10,6 @@ Feature: Recall — live tools
   Background:
     Given default Grover setup
 
-    @wip
     Scenario: recall__search surfaces memory mid-episode
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |
@@ -45,7 +44,6 @@ Feature: Recall — live tools
       | scene-id             | origin-episode       |
       | 2026-03-01-1000-s1x1 | 2026-03-01-1000-ab12 |
 
-    @wip
     Scenario: recall__scene fetches distilled text by id; unknown ids fail helpfully
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |

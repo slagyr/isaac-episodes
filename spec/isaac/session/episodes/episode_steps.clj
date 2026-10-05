@@ -331,7 +331,7 @@
         (when ss
           (session-ctx/create-with-resolved-behavior!
             session-id {:crew crew :cwd (root-dir) :origin {:kind :cli}
-                        :session-store ss :session-policy :episodes}))
+                        :session-store ss :context-mode :episodes :observers [:episodes]}))
         (g/assoc! :current-episode (assoc episode :crew crew))))))
 
 (defgiven "crew {crew:string} has a closed episode {episode-id:string} on session {sid:string} with scenes:"
@@ -514,7 +514,7 @@
             head    (get kv :compaction.head)
             last-in (get kv :last-input-tokens)
             create-opts (cond-> {:crew crew :cwd (root-dir) :origin {:kind :cli}
-                                 :session-store ss :session-policy :episodes}
+                                 :session-store ss :context-mode :episodes :observers [:episodes]}
                           head (assoc :compaction {:head head}))]
         (store/write-episode! (mem-fs) (root-dir) episode [])
         (when ss
@@ -580,6 +580,14 @@
 (defthen "that episode has no recalled scenes"
   isaac.session.episodes.episode-steps/that-episode-has-no-recalled-scenes
   "Negative twin of recalled-scenes: absent or empty refs.")
+
+(defn last-llm-request-does-not-contain [needle]
+  (let [text (llm-messages-text)]
+    (g/should-not (str/includes? text (str needle)))))
+
+(defthen "the last LLM request does not contain {needle:string}"
+  isaac.session.episodes.episode-steps/last-llm-request-does-not-contain
+  "Absence assert on the last outbound LLM request messages.")
 
 (defthen "the last LLM request does not mention recall"
   isaac.session.episodes.episode-steps/last-llm-request-does-not-mention-recall

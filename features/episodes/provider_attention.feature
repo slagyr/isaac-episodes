@@ -1,7 +1,6 @@
 Feature: Episode provider attention
   Episode failures use the agent attention seam.
 
-  @wip
   Scenario: an episode seal failing on the gist provider posts attention through the same seam
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |

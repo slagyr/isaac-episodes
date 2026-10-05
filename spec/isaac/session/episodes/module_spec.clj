@@ -17,9 +17,11 @@
         (should= :int (get-in manifest (conj path :type)))
         (should (seq (get-in manifest (conj path :description)))))))
 
-  (it "contributes episodes policy, tools, CLIs, and embedding APIs"
+  (it "contributes episodes context mode, observer, tools, CLIs, and embedding APIs"
     (let [manifest (edn/read-string (slurp "resources/isaac-manifest.edn"))]
-      (should (contains? (:isaac.agent/session-policy manifest) :episodes))
+      (should (contains? (:isaac.agent/context-mode manifest) :episodes))
+      (should= #{:episodes} (get-in manifest [:isaac.agent/context-mode :episodes :requires :observers]))
+      (should (contains? (:isaac.agent/session-observer manifest) :episodes))
       (should= #{:recall/search :recall/scene} (set (keys (:isaac.agent/tools manifest))))
       (should= #{:embed :episodes :recall} (set (keys (:isaac/cli manifest))))
       (should= true (get-in manifest [:isaac/cli :embed :hosted]))

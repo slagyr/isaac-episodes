@@ -8,7 +8,8 @@
     [isaac.foundation.config.loader :as loader]
     [isaac.foundation.marigold :as marigold]
     [isaac.agent.session.context :as session-ctx]
-    [isaac.session.episodes.policy]
+    [isaac.session.episodes.observer]
+    [isaac.session.episodes.context]
     [isaac.agent.session.spec-helper :as helper]
     [isaac.agent.session.store.spi :as store]
     [isaac.agent.tool.builtin :as builtin]
@@ -21,7 +22,8 @@
   {:root "/test/prompt"})
 
 (def synthetic-config
-  {:crew   {crew-name {:name crew-name :soul crew-soul :model "grover" :session-policy :episodes}}
+  {:crew   {crew-name {:name crew-name :soul crew-soul :model "grover"
+                       :context-mode :episodes :observers [:episodes]}}
    :models {"grover" {:alias "grover" :model "echo" :provider "grover" :context-window 32768}}})
 
 (defn- fake-charge [request]
@@ -34,7 +36,7 @@
            {:model (:model model-cfg)
             :soul  (:soul crew-cfg)})))
 
-(describe "CLI prompt with the episodes policy"
+(describe "CLI prompt with the episodes context mode"
 
   #_{:clj-kondo/ignore [:unresolved-symbol]}
   (around [example] (helper/with-memory-store (example)))

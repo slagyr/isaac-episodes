@@ -9,7 +9,6 @@
     [isaac.agent.config.defaults :as config-defaults]
     [isaac.foundation.config.loader :as loader]
     [isaac.foundation.config.root :as root]
-    [isaac.session.episodes.layout :as layout]
     [isaac.session.episodes.lifecycle :as lifecycle]
     [isaac.session.episodes.migrate :as migrate]
     [isaac.session.episodes.store :as store]
@@ -21,8 +20,7 @@
   [["-h" "--help" "Show help"]
    [nil  "--force" "Re-run segmentation and replace sealed scenes"]
    [nil  "--crew CREW" "Crew whose sealed scenes to index"]
-   [nil  "--rebuild" "Re-embed every scene, replacing existing index rows"]
-   [nil  "--dry-run" "Print the migrate-layout plan without moving files"]])
+   [nil  "--rebuild" "Re-embed every scene, replacing existing index rows"]])
 
 (def ^:private help-text
   (str/join "\n"
@@ -30,7 +28,6 @@
              ""
              "Subcommands:"
              "  migrate-session <session-id>  Materialize a session as a closed episode"
-              "  migrate-layout                Fold leftover sessions/episodes into the nested layout"
               "  close                         Close open episodes now (seal scenes)"
               "  list                          List a crew's episodes"
               "  index                         Embed sealed scenes into the per-crew retrieval index"
@@ -195,26 +192,6 @@
       (print-err! (or (ex-message e) (.getMessage e)))
       1)))
 
-(def ^:private migrate-layout-help
-  (str/join "\n"
-            ["Usage: isaac episodes migrate-layout [options]"
-             ""
-             "Move leftover sessions/<sid>/ directories under sessions/<crew>/<sid>/"
-             "and fold leftover episodes/<crew>/<eid>/ into the nested session tree."
-             "Idempotent. Existing ids are kept."
-             ""
-             "Options:"
-             "  --dry-run  Print the plan without moving files"
-             "  -h, --help  Show help"]))
-
-(defn- run-migrate-layout [opts dry-run?]
-  (try
-    (let [{:keys [root fs]} (install! opts)]
-      (layout/migrate-layout! {:fs fs :root root :dry-run? dry-run?}))
-    (catch Exception e
-      (print-err! (or (ex-message e) (.getMessage e)))
-      1)))
-
 (defn- run-migrate-session [opts session-id force?]
   (cond
     (str/blank? session-id)
@@ -246,19 +223,6 @@
     (cond
       (or (nil? sub) (= "help" sub) (#{"-h" "--help"} sub))
       (do (println help-text) 0)
-
-      (= "migrate-layout" sub)
-      (let [{:keys [options errors]}
-            (tools-cli/parse-opts rest-args option-spec)]
-        (cond
-          (seq errors)
-          (do (doseq [e errors] (print-err! e)) 1)
-
-          (:help options)
-          (do (println migrate-layout-help) 0)
-
-          :else
-          (run-migrate-layout opts (boolean (:dry-run options)))))
 
       (= "migrate-session" sub)
       ;; Parse options anywhere in the tail so `migrate-session id --force` works
@@ -335,8 +299,6 @@
 (defmethod cli-api/subcommands :episodes [_id]
   [{:name "migrate-session"
     :summary "Materialize a session as a closed episode"}
-   {:name "migrate-layout"
-    :summary "Fold leftover sessions/episodes into the nested layout"}
    {:name "close"
     :summary "Close open episodes now (seal scenes)"}
    {:name "list"

@@ -209,9 +209,10 @@
                         (filter #(contains? #{"user" "assistant"} (:role %)))
                         (remove #(str/blank? (:text %))))
           assistant (last (filter #(= "assistant" (:role %)) messages))
-          user      (last (filter #(and (= "user" (:role %))
-                                       (or (nil? assistant)
-                                           (not (pos? (compare (:id %) (:id assistant)))))) messages))]
+          before    (if assistant
+                      (vec (take-while #(not (identical? % assistant)) messages))
+                      (vec messages))
+          user      (last (filter #(= "user" (:role %)) before))]
       {:user (:text user) :assistant (:text assistant)})))
 
 (defn- hold-block!

@@ -1,7 +1,7 @@
 (ns isaac.session.episodes.ids
   "Timestamped episode/scene ids: yyyyMMddHHmmssSSS (17 digits) minted from
    the clock at creation. The store bumps by 1 ms on a collision inside the
-   same parent. Existing ids are kept as-is by migrate-layout."
+   same parent. Existing ids are kept as-is."
   (:import
     (java.time Instant ZoneOffset)
     (java.time.format DateTimeFormatter)))

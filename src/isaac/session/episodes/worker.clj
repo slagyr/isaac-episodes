@@ -54,7 +54,7 @@
 (defn- episodes-crews [cfg fs* root]
   (let [from-cfg (->> (or (:crew cfg) {})
                       (keep (fn [[crew-id crew-cfg]]
-                              (when (= :episodes (:session-policy crew-cfg))
+                              (when (lifecycle/episodes-crew? cfg crew-id)
                                 (if (keyword? crew-id) (name crew-id) (str crew-id))))))
         from-disk (list-crew-names fs* root)]
     (vec (distinct (concat from-cfg from-disk)))))

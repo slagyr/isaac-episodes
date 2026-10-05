@@ -640,7 +640,7 @@
     (let [session  (binding [memory/*now* (java.time.Instant/parse "2026-03-01T10:00:00Z")]
                      (seed-open-episode! @ss @mem @root 1))
           provider (llm-provider/make-provider "grover" {:api "grover" :auth "none"})
-          cfg      {:crew     {"cordelia" {:session-policy :episodes :model "echo" :soul "You are Cordelia"}}
+          cfg      {:crew     {"cordelia" {:observers [:episodes] :context-mode :episodes :model "echo" :soul "You are Cordelia"}}
                     :episodes {:gist-model :gist
                                :seal {:idle-minutes 3}
                                :ttl-minutes 60
@@ -659,7 +659,7 @@
 
   (it "deletes an empty cold episode on the tick and does not retry it"
     (let [id "20260301100000000"
-          cfg {:crew     {"cordelia" {:session-policy :episodes :model "echo" :soul "You are Cordelia"}}
+          cfg {:crew     {"cordelia" {:observers [:episodes] :context-mode :episodes :model "echo" :soul "You are Cordelia"}}
                :episodes {:gist-model :gist :seal {:idle-minutes 3} :ttl-minutes 60}}]
       (store/write-episode! @mem @root {:id id :crew "cordelia" :status :open
                                         :thread "reef-chat" :started-at "2026-03-01T10:00:00"} [])
@@ -686,7 +686,7 @@
   (it "skips an in-flight episode on the tick"
     (let [session  (seed-open-episode! @ss @mem @root 1)
           provider (llm-provider/make-provider "grover" {:api "grover" :auth "none"})
-          cfg      {:crew     {"cordelia" {:session-policy :episodes :model "echo" :soul "You are Cordelia"}}
+          cfg      {:crew     {"cordelia" {:observers [:episodes] :context-mode :episodes :model "echo" :soul "You are Cordelia"}}
                     :episodes {:gist-model :gist
                                :seal {:idle-minutes 3}
                                :ttl-minutes 60

@@ -20,7 +20,6 @@ Feature: Episodes storage layout — one directory per session under sessions/<c
   Background:
     Given default Grover setup
 
-  @wip
   Scenario: a cold open on an episodes crew creates the session directory once and the first episode beneath it
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path           | value            |
@@ -54,7 +53,6 @@ Feature: Episodes storage layout — one directory per session under sessions/<c
       | message | user         | Light the lamp     |
       | message | assistant    | Charted, keep west |
 
-  @wip
   Scenario: a successor episode after compaction is a sibling under the same session; the closed episode keeps its final counters
     Given the isaac EDN file "config/models/local.edn" exists with:
       | path           | value      |
@@ -112,7 +110,6 @@ Feature: Episodes storage layout — one directory per session under sessions/<c
       | message | user         | new input       |
       | message | assistant    | New response    |
 
-  @wip
   Scenario: a session-level pin set once applies to every episode of that session
     Given the isaac EDN file "config/models/alpha.edn" exists with:
       | path     | value   |
@@ -149,7 +146,6 @@ Feature: Episodes storage layout — one directory per session under sessions/<c
       | path  | value |
       | model | beta  |
 
-  @wip
   Scenario: the listing shows each session's context mode
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |
@@ -176,7 +172,6 @@ Feature: Episodes storage layout — one directory per session under sessions/<c
       | lantern-room\s+\S+\s+\S+\s+[\d,]+\s+[\d,]+\s+\d+%\s+cordelia\s+episodes |
     And the exit code is 0
 
-  @wip
   Scenario: a session is found by id alone through the sessions index, and an id that exists under another crew is refused
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path           | value            |
@@ -197,7 +192,6 @@ Feature: Episodes storage layout — one directory per session under sessions/<c
     And the exit code is 1
     And the isaac file "sessions/main/lantern-room/session.edn" does not exist
 
-  @wip
   Scenario: the sessions index is derived — a directory the index does not know is found by scan and the index repaired
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path  | value            |
@@ -219,7 +213,6 @@ Feature: Episodes storage layout — one directory per session under sessions/<c
       | harbor-log.crew   | main     |
       | lantern-room.crew | cordelia |
 
-  @wip
   Scenario: the recall index locates a scene by session id, episode id, and scene id
     Given config file "isaac.edn" containing:
       """

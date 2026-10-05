@@ -1,23 +1,37 @@
 # isaac.session.episodes — episodes and recall
 
 You are a crew running inside Isaac. This chapter covers what
-**isaac-episodes** owns: the `:episodes` session policy, the episode
-containers a crew's conversation lives in, sealing conversation into
-recallable scenes, and recall (search, the recall tools, and recall-at-open
-injection). Foundation's own chapter (`handbook__read` topic
-`isaac.foundation`) covers config mechanics, the vocabulary table, and hot
-reload — read it first if you haven't. Session and crew mechanics that
-episodes builds on (session policies, session naming, tool grants) belong to
-`isaac.agent`; this chapter names them once and moves on.
+**isaac-episodes** owns: the `:episodes` context mode, the `:episodes`
+session observer, the episode containers a crew's conversation lives in,
+sealing conversation into recallable scenes, and recall (search, the recall
+tools, and recall-at-open injection). Foundation's own chapter
+(`handbook__read` topic `isaac.foundation`) covers config mechanics, the
+vocabulary table, and hot reload — read it first if you haven't. Session
+and crew mechanics that episodes builds on (context modes, observers,
+session naming, tool grants) belong to `isaac.agent`; this chapter names
+them once and moves on.
 
-A crew's conversation runs under a **session policy**. Most crews use the
-default (`chronicle`, plain append-only sessions); a crew with
-`session-policy` set to `episodes` gets its conversation split into
-**episodes** — closed, timestamped containers whose content is distilled
-into **scenes** and made searchable through **recall**. The inbound session
+Episodes contribute two things through agent's berths. The **`:episodes`
+observer** keeps the record: it opens and seals episodes, feeds scenes and
+keeps the index. The **`:episodes` context mode** builds the turn's context
+from that record: a cold open at an episode boundary with lineage,
+continuation and recall. The context mode requires the observer, so a crew
+that wants episodic context sets both:
+
+```
+:context-mode :episodes
+:observers    [:episodes]
+```
+
+The observer runs fine without the context mode: a crew can keep
+`:context-mode :full` (or `:reset`) and still produce episodes and scenes
+for vault sync, search, and recall tools — they just are not used for its
+own context. There is no automatic migration from the retired
+`:session-policy`; crews are moved by hand at deploy. The inbound session
 id (a comm's canonical per-space id, or `--session <name>`) is always the
 **session id**; it never changes. What changes underneath it is which
-episode is currently open.
+episode is currently open. The session transcript is written once; episodes
+are ranges into it.
 
 ## Episodes
 
@@ -35,12 +49,10 @@ message on a session opens an episode. From there:
   a **chain**, not a new session — `isaac episodes list` shows the whole
   chain under one session-id, oldest first.
 - **Compaction** — when the agent module compacts a session's context, the
-  episodes policy closes the current episode against the pre-compaction
-  transcript and opens a successor seeded with the compaction summary, in
-  the same turn. A cold session never compacts; on a cold open the successor
-  starts with an **empty transcript** except for recall — the compaction
-  check that used to run against yesterday's already-closed episode was
-  itself the bug (isaac-1vx0).
+  episodes observer closes the current episode and opens a successor in the
+  same turn. The episodes context mode sizes the compaction check against
+  the current episode's slice, not yesterday's already-closed episode
+  (isaac-1vx0).
 - **Explicit close** — `isaac episodes close --crew <crew>` seals every open
   episode for a crew right now, independent of TTL.
 - **Housekeeping** — a scheduled worker (inside the server process only)
@@ -56,10 +68,19 @@ the same way any session is named (`isaac.agent`'s naming strategy: the
 caller's `--session name`, or adjective-noun / sequential when none is
 given); episodes never mints a session id of its own.
 
-**How to change it.** Turn a crew into an episodes crew:
+**How to change it.** Turn a crew into an episodes crew (both settings):
 
 ```
-config set crew.cordelia.session-policy episodes
+config set crew.cordelia.context-mode episodes
+config set crew.cordelia.observers '[:episodes]'
+```
+
+Run the observer without the context mode to keep recording while the crew
+uses full or reset context:
+
+```
+config set crew.cordelia.context-mode full
+config set crew.cordelia.observers '[:episodes]'
 ```
 
 Tune its lifecycle:
@@ -96,19 +117,10 @@ episodes it closed (and indexed, if embedding is configured).
   backing session are gone entirely — this is intentional cleanup, not data
   loss of real conversation.
 - **Compaction seems to run again on every turn (`:session/compaction-started`
-  repeating).** The episodes policy's compaction path measures progress
-  against the *successor* episode it just opened, not the one it closed — if
-  you see repeated compaction attempts with no progress, that's the bug
-  isaac-jom5 fixed; report it rather than assuming the model is stuck.
-- **A crew's first checkpoint or tool call throws `AbstractMethodError`.**
-  The episodes policy must implement every `isaac.agent.session.policy/SessionPolicy`
-  method the agent module's protocol declares (isaac-rmbz added
-  `append-checkpoint!`); see foundation's chapter, Runtime → the
-  babashka/JVM protocol trap, for why this fails on the JVM specifically and
-  not always on babashka.
-- **`open-session!` throws "session name required".** A blank or nil session
-  name is refused outright, not silently defaulted — episodes never
-  synthesizes a session id from the episode clock.
+  repeating).** The episodes context mode sizes the compaction check against
+  the *successor* episode it just opened, not the one it closed — if you see
+  repeated compaction attempts with no progress, that's the bug isaac-jom5
+  fixed; report it rather than assuming the model is stuck.
 
 ## Sealing scenes into memory
 
@@ -283,8 +295,8 @@ The recall tool itself logs `:recall/search` / `:recall/scene` on each call.
   model switch is loud rather than quietly wrong).
 - **A crew's recall tools show up even though `tools.allow` never named
   them, or don't show up despite an explicit allow.** The grant is part of
-  choosing `session-policy episodes`, independent of `tools.allow` — the
-  only way to suppress it is `tools.deny [:recall/*]`.
+  choosing the episodes observer, independent of `tools.allow` — the only
+  way to suppress it is `tools.deny [:recall/*]`.
 - **Recalled memory bleeds into a new scene's gist.** The recall block is
   framed as context, not conversation, specifically so segmentation
   distills only what the episode itself said and did — a gist describing
@@ -377,19 +389,13 @@ plain EDN lines, not a `handbook__read` topic or a CLI command of its own).
 Three commands are hosted here:
 
 - `isaac episodes migrate-session <session-id>` — materialize an *existing*
-  plain session (one that predates the episodes policy, or a chronicle crew
-  you want to backfill) as a closed episode: segments its whole transcript
-  into scenes without touching the original session. Re-running is a no-op
-  ("already migrated"); `--force` re-segments and replaces scenes in place.
-  A partial run (some spans flagged as unparseable segmentation output)
-  reports which spans and resumes them on the next run without re-touching
-  already-sealed spans.
-- `isaac episodes migrate-layout` — a one-time, idempotent structural
-  migration folding older flat `sessions/<sid>/` and `episodes/<crew>/<eid>/`
-  layouts into the current nested `sessions/<crew>/<sid>/episodes/<eid>/`
-  tree; `--dry-run` prints the plan without moving anything. You should not
-  need this on a fresh install.
-- `isaac episodes close [--crew <crew>]` / `isaac episodes list [--crew
+  plain session (one that predates episodes, or a crew you want to backfill)
+  as a closed episode: segments its whole transcript into scenes without
+  touching the original session. Re-running is a no-op ("already migrated");
+  `--force` re-segments and replaces scenes in place. A partial run (some
+  spans flagged as unparseable segmentation output) reports which spans and
+  resumes them on the next run without re-touching already-sealed spans.
+- `isaac episodes close [--crew <crew>]` / `isaac episodes list [--crew]
   <crew>]` / `isaac episodes index [--crew <crew>] [--rebuild]` — covered
   under Episodes, Sealing scenes, and Recall above respectively.
 
@@ -407,7 +413,3 @@ Two more commands round out the module: `isaac recall <query> [--crew
   *parse* failure gets one retry and a flagged span for later resumption; a
   *provider/auth* error aborts the whole run instead, since retrying an
   auth failure wastes calls for no chance of success.
-- **`isaac episodes migrate-layout` reports "nothing to migrate" on every
-  run.** That's the expected steady state once the fold is done — it's
-  idempotent and safe to run again, but only does work when it finds a
-  leftover flat layout.

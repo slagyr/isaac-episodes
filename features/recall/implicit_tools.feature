@@ -8,7 +8,6 @@ Feature: Episode crews are granted the recall tools
   Background:
     Given default Grover setup
 
-  @wip
   Scenario: an episodes crew whose allow list omits recall still gets the recall tools
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path           | value            |
@@ -33,7 +32,6 @@ Feature: Episode crews are granted the recall tools
       | recall__search |
       | recall__scene  |
 
-  @wip
   Scenario: an episodes crew with no tools section gets only the recall tools
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path           | value            |
@@ -56,7 +54,6 @@ Feature: Episode crews are granted the recall tools
       | recall__search |
       | recall__scene  |
 
-  @wip
   Scenario: an episodes crew that denies recall does not receive the recall tools
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path           | value            |

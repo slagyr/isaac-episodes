@@ -5,7 +5,7 @@
      <root>/sessions/<crew>/<session-id>/episodes/<episode-id>/current.ednl
      <root>/sessions/<crew>/<session-id>/episodes/<episode-id>/scenes/<scene-id>.md
 
-   Legacy layout (read during migrate-layout, still listed as a fallback):
+   Legacy layout (listed as a fallback for leftover trees):
 
      <root>/episodes/<crew>/<episode-id>/episode.edn
      <root>/episodes/<crew>/<episode-id>/<scene-id>.md

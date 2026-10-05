@@ -19,8 +19,13 @@
  {:ollama {:namespace isaac.session.episodes.recall.embedding.ollama},
   :embeddings {:namespace isaac.session.episodes.recall.embedding.embeddings},
   :grover {:namespace isaac.session.episodes.recall.embedding}},
- :isaac.agent/session-policy
- {:episodes {:factory isaac.session.episodes.policy/create}},
+ :isaac.agent/context-mode
+ {:episodes {:factory  isaac.session.episodes.context/select-transcript
+             :prepare  isaac.session.episodes.context/prepare-turn!
+             :wait-for :episodes
+             :requires {:observers #{:episodes}}}},
+ :isaac.agent/session-observer
+ {:episodes {:factory isaac.session.episodes.observer/create}},
  :factory isaac.session.episodes.module/create-module,
  :id :isaac.session.episodes,
  :handbook "isaac/session/episodes/handbook.md",

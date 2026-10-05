@@ -29,7 +29,6 @@ Feature: Episodes — migrate-session
   # ----- Help -----
 
   # isaac-qxvl: gains close + list rows
-  @wip
   Scenario: episodes command is registered and has help
     When isaac is run with "help episodes"
     Then the stdout matches:
@@ -43,7 +42,6 @@ Feature: Episodes — migrate-session
 
   # ----- Migration -----
 
-  @wip
   Scenario: migrating a session materializes a closed episode
     Given the isaac EDN file "config/models/gist.edn" exists with:
       | path     | value  |
@@ -85,7 +83,6 @@ Feature: Episodes — migrate-session
       | Wine pairing for pheasant | #"(?s)pinot noir"       |
       | Regatta scheduling        | #"(?s)race is Saturday" |
 
-  @wip
   Scenario: noisy preamble and fences around boundary lines still parse
     Given the isaac EDN file "config/models/gist.edn" exists with:
       | path     | value  |
@@ -118,7 +115,6 @@ Feature: Episodes — migrate-session
       | Wine pairing for pheasant | #"(?s)pinot noir"       |
       | Regatta scheduling        | #"(?s)race is Saturday" |
 
-  @wip
   Scenario: scene text is distilled — tool markers kept, payloads dropped
     Given the isaac EDN file "config/models/gist.edn" exists with:
       | path     | value  |
@@ -153,7 +149,6 @@ Feature: Episodes — migrate-session
 
   # ----- Compaction spans -----
 
-  @wip
   Scenario: compaction bounds the spans and its summary rides the next span's prompt
     Given the isaac EDN file "config/models/gist.edn" exists with:
       | path     | value  |
@@ -190,7 +185,6 @@ Feature: Episodes — migrate-session
 
   # ----- Idempotency -----
 
-  @wip
   Scenario: re-run is a no-op; --force re-migrates in place
     Given the isaac EDN file "config/models/gist.edn" exists with:
       | path     | value  |
@@ -229,7 +223,6 @@ Feature: Episodes — migrate-session
 
   # ----- Failure and resume -----
 
-  @wip
   Scenario: bad segmentation output — one retry, span flagged with raw, re-run resumes
     Given the isaac EDN file "config/models/gist.edn" exists with:
       | path     | value  |
@@ -286,7 +279,6 @@ Feature: Episodes — migrate-session
 
   # ----- Provider errors -----
 
-  @wip
   Scenario: provider chat error aborts without flagging or retry
     Given the isaac EDN file "config/models/gist.edn" exists with:
       | path     | value  |
@@ -318,7 +310,6 @@ Feature: Episodes — migrate-session
 
   # ----- Errors -----
 
-  @wip
   Scenario: unknown session id fails helpfully
     When isaac is run with "episodes migrate-session ghost-ship"
     Then the stderr contains "unknown session"
@@ -328,7 +319,6 @@ Feature: Episodes — migrate-session
 
   # ----- Recall-worthiness at seal (isaac-xl6h) -----
 
-    @wip
     Scenario: tilde-marked scenes seal as routine
     Given the isaac EDN file "config/models/gist.edn" exists with:
       | path     | value  |
@@ -358,7 +348,6 @@ Feature: Episodes — migrate-session
       | Loading the rigging checklist skill                       | true    |
       | Diagnosed mainstay fraying: chafe guard mounted backwards |         |
 
-    @wip
     Scenario: marker-only scenes are auto-marked routine
     Given the isaac EDN file "config/models/gist.edn" exists with:
       | path     | value  |
@@ -390,7 +379,6 @@ Feature: Episodes — migrate-session
       | Pump nominal report       |         |
 
     # isaac-bh17: prompt gains (cont ...) continuation-mark instructions
-  @wip
   Scenario: segmentation prompt instructs routine marking and what-not-how gists
     Given the isaac EDN file "config/models/gist.edn" exists with:
       | path     | value  |
