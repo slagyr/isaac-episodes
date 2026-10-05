@@ -108,7 +108,6 @@ Feature: Episodes — live (policy + lifecycle)
       | message | user         | #"(?s).*Set the watch rotation" |
       | message | assistant    | Watches dogged         |
 
-    @wip
     Scenario: a cold prompt starts the new episode with an empty transcript, recall only (isaac-1vx0)
     Field 2026-09-29 13:51Z (yopp ACP session a6c4, idle ~20h): the first
     message ran the compaction check against yesterday's gauge (930,470) on a
@@ -500,7 +499,6 @@ Feature: Episodes — live (policy + lifecycle)
 
   # ----- Lineage seed (isaac-h5dk) -----
 
-    @wip
     Scenario: cold continuation seeds parent gists by lineage, and the last exchange too (isaac-mwqs)
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |

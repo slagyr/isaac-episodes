@@ -122,14 +122,17 @@
                                                  (or (:episode closed) open)
                                                  (when store (store/get-session store session-id))))
                        (latest-on-session fs* root crew session-id))
+            previous-transcript (when (and prior store)
+                                  (store/chronicle-transcript store session-id))
             _      (when (and prior store)
                      (store/rotate-transcript! store session-id))
             ep     (open-container! (cond-> opts
                                       prior (assoc :parent-episode (:id prior))))]
-        {:episode ep :action (if prior :chained :opened)}))))
+        {:episode ep :action (if prior :chained :opened)
+         :previous-transcript previous-transcript}))))
 
 (defn- recall-ahead!
-  [{:keys [store crew session-id query cfg]} {:keys [action episode]}]
+  [{:keys [store crew session-id query cfg]} {:keys [action episode previous-transcript]}]
   (when (contains? #{:opened :chained} action)
     (recall-inject/inject-on-open!
       {:fs            (runtime-fs)
@@ -139,6 +142,7 @@
        :episode       episode
        :query         query
        :action        action
+       :previous-transcript previous-transcript
        :session-store store})))
 
 (defn- crew-of [store session-id fallback]

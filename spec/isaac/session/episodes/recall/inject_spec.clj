@@ -296,6 +296,25 @@
           (should-contain "Want me to rotate the logs?" text)
           (should-not (str/includes? (subs text 0 (.indexOf text "Want me")) "do not act on it again")))))
 
+    (it "keeps the previous user's request when the cold-open rotation leaves only the reply in the chronicle"
+      (let [parent "2026-03-01-1000-ab12"
+            previous [{:type "message" :id "1" :message {:role "user" :content "Chart the reef passage"}}
+                      {:type "message" :id "2" :message {:role "assistant" :content "Marked; keep to leeward."}}]]
+        (write-closed! @mem "cordelia" parent [(assoc wine-scene :gist "Reef passage charted")])
+        (session-store/append-message! @ss "open-ep" {:role "assistant" :content "Marked; keep to leeward."})
+        (store/write-episode! @mem root {:id "open-ep" :crew "cordelia" :status :open
+                                         :thread "reef-chat" :session-id "open-ep"
+                                         :parent-episode parent :scene-ids []} [])
+        (log/capture-logs
+          (sut/inject-on-open! {:fs @mem :root root :cfg embed-cfg :crew "cordelia"
+                                :episode {:id "open-ep" :crew "cordelia" :thread "reef-chat"
+                                          :session-id "open-ep" :parent-episode parent}
+                                :previous-transcript previous
+                                :query "Set the watch rotation" :action :chained :session-store @ss}))
+        (let [text (:pending-recall (store/read-episode @mem root "cordelia" "open-ep"))]
+          (should-contain "User: Chart the reef passage" text)
+          (should-contain "Assistant: Marked; keep to leeward." text))))
+
     (it "seeds parent gists on a chained open and does not duplicate search hits"
       (let [parent-id "2026-03-01-1000-ab12"]
         (store/write-episode! @mem root {:id "open-ep" :crew "cordelia" :status :open

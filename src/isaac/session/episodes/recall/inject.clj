@@ -201,9 +201,9 @@
   (when parent-id
     (vec (take THREAD_GISTS (store/list-scenes fs* root crew parent-id)))))
 
-(defn- last-exchange [session-store backing]
-  (when (and session-store backing)
-    (let [messages (->> (session-store/chronicle-transcript session-store backing)
+(defn- last-exchange [session-store backing previous-transcript]
+  (when (or previous-transcript (and session-store backing))
+    (let [messages (->> (or previous-transcript (session-store/chronicle-transcript session-store backing))
                         (filter #(= "message" (:type %)))
                         (map distill/distill-entry)
                         (filter #(contains? #{"user" "assistant"} (:role %)))
@@ -268,7 +268,7 @@
   "On :opened / :chained, hold lineage then search-recall on the backing
    session and record :recalled-scenes. Warm turns and missing query are no-ops.
    Unconfigured embedding / missing index is a quiet skip; provider failure logs."
-  [{:keys [fs root cfg crew episode query action session-store]}]
+  [{:keys [fs root cfg crew episode query action session-store previous-transcript]}]
   (cond
     (not (contains? #{:opened :chained} action))
     (log-recall-skipped! (or action :warm))
@@ -293,7 +293,7 @@
                       eid)
           parent       (:parent-episode episode)
           last-scene   (when parent (last (store/list-scenes fs* root crew parent)))
-          exchange     (when parent (last-exchange session-store backing))
+          exchange     (when parent (last-exchange session-store backing previous-transcript))
           continuation (when parent
                          (render-continuation-block last-scene (:user exchange) (:assistant exchange)
                                                     (or (get-in cfg [:episodes :recall :continuation :max-chars])
