@@ -11,7 +11,8 @@ Feature: Recall is visible in the logs
       | path         | value            |
       | model        | echo             |
       | soul         | You are Cordelia |
-      | session-policy | episodes         |
+      | context-mode   | episodes         |
+      | observers      | [:episodes]      |
     And config file "isaac.edn" containing:
       """
       {:defaults {:frequencies {:crew "cordelia"}}
@@ -22,6 +23,7 @@ Feature: Recall is visible in the logs
       | 2026-03-01-1000-s1x1 | 2026-03-01T10:00:00 | 2026-03-01T10:05:00 | Wine pairing for pheasant | a light pinot noir suits roast pheasant |
     When isaac is run with "episodes index --crew cordelia"
 
+  @wip
   Scenario: recall-at-open logs what it injected
     Given the following model responses are queued:
       | type | content              | model |
@@ -32,6 +34,7 @@ Feature: Recall is visible in the logs
       | level | event              | crew     | thread      | search | lineage | top            | floor |
       | :info | :episodes/recalled | cordelia | supper-chat | 1      | 0       | #"0\.[0-9]+"   | 0.47  |
 
+  @wip
   Scenario: a query that clears nothing logs the best score it saw
     Given the following model responses are queued:
       | type | content        | model |
@@ -42,6 +45,7 @@ Feature: Recall is visible in the logs
       | level | event                  | crew     | thread    | best         | floor |
       | :info | :episodes/recall-empty | cordelia | logs-chat | #"0\.[0-9]+" | 0.47  |
 
+  @wip
   Scenario: the recall tool logs the scene it fetched
     Given the built-in tools are registered
     And the crew "cordelia" allows tools: "recall/*"

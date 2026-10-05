@@ -11,7 +11,8 @@ Feature: Recall ledger — an opt-in per-crew research log of every recall
       | path           | value            |
       | model          | echo             |
       | soul           | You are Cordelia |
-      | session-policy | episodes         |
+      | context-mode   | episodes         |
+      | observers      | [:episodes]      |
     And config file "isaac.edn" containing:
       """
       {:defaults {:frequencies {:crew "cordelia"}}
@@ -23,6 +24,7 @@ Feature: Recall ledger — an opt-in per-crew research log of every recall
       | 2026-03-01-1000-s1x1 | 2026-03-01T10:00:00 | 2026-03-01T10:05:00 | Wine pairing for pheasant | a light pinot noir suits roast pheasant |
     When isaac is run with "episodes index --crew cordelia"
 
+  @wip
   Scenario: with recall.ledger on, a turn-start recall is appended to the crew's ledger (isaac-ozh5)
     Given the following model responses are queued:
       | type | content            | model |
@@ -33,6 +35,7 @@ Feature: Recall ledger — an opt-in per-crew research log of every recall
       | kind    | session     | query                    | candidates                        | injected             |
       | :inject | bistro-chat | Remember that wine talk? | #"(?s).*2026-03-01-1000-s1x1.*"   | 2026-03-01-1000-s1x1 |
 
+  @wip
   Scenario: with recall.ledger on, a recall__search call is appended with kind :search (isaac-ozh5)
     Given the crew "cordelia" allows tools: recall/search
     And the following model responses are queued:

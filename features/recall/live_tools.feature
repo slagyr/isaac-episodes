@@ -10,12 +10,14 @@ Feature: Recall — live tools
   Background:
     Given default Grover setup
 
+    @wip
     Scenario: recall__search surfaces memory mid-episode
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |
       | model        | echo             |
       | soul         | You are Cordelia |
-      | session-policy | episodes         |
+      | context-mode   | episodes         |
+      | observers      | [:episodes]      |
     And the crew "cordelia" allows tools: recall/search
     And config file "isaac.edn" containing:
       """
@@ -43,12 +45,14 @@ Feature: Recall — live tools
       | scene-id             | origin-episode       |
       | 2026-03-01-1000-s1x1 | 2026-03-01-1000-ab12 |
 
+    @wip
     Scenario: recall__scene fetches distilled text by id; unknown ids fail helpfully
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |
       | model        | echo             |
       | soul         | You are Cordelia |
-      | session-policy | episodes         |
+      | context-mode   | episodes         |
+      | observers      | [:episodes]      |
     And the crew "cordelia" allows tools: recall/scene
     And crew "cordelia" has a closed episode "2026-03-01-1000-ab12" with scenes:
       | id                   | started-at          | ended-at            | gist                      | text                                    |

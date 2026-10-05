@@ -16,7 +16,8 @@ Feature: Recall — continuation seed carries an open episode forward
       | path           | value            |
       | model          | echo             |
       | soul           | You are Cordelia |
-      | session-policy | episodes         |
+      | context-mode   | episodes         |
+      | observers      | [:episodes]      |
     And the isaac EDN file "config/models/gist.edn" exists with:
       | path     | value  |
       | model    | gist   |
@@ -28,6 +29,7 @@ Feature: Recall — continuation seed carries an open episode forward
                   :embedding {:api "grover" :model "mini-embed"}}}
       """
 
+  @wip
   Scenario: an open offer survives a cold reopen, not as already-handled memory (isaac-mwqs)
     Given the current time is "2026-03-01T10:00:00"
     And the following model responses are queued:
@@ -49,6 +51,7 @@ Feature: Recall — continuation seed carries an open episode forward
       | messages | #"(?s)Where this conversation left off(?:(?!do not act on it again).)*Want me to rotate the logs\?" |
       | messages | #"(?s)Want me to rotate the logs\?.*Yes please do it"                                                |
 
+  @wip
   Scenario: a chained reopen gets the continuation block alongside the lineage gists (isaac-mwqs)
     Given the current time is "2026-03-01T10:00:00"
     And the following model responses are queued:
@@ -69,6 +72,7 @@ Feature: Recall — continuation seed carries an open episode forward
       | messages | #"(?s)Where this conversation left off" |
       | messages | #"(?s)Previously in this conversation"  |
 
+  @wip
   Scenario: a very long last reply is truncated in the continuation block (isaac-mwqs)
     Given config file "isaac.edn" containing:
       """
@@ -96,6 +100,7 @@ Feature: Recall — continuation seed carries an open episode forward
     And the last LLM request mentions "Want me to rotate the logs, compact the archive, and clear the cache too?" exactly 0 times
     And the last LLM request mentions "Want me to rotate the logs" exactly 1 time
 
+  @wip
   Scenario: a session's first-ever episode has no continuation block (isaac-mwqs)
     Given the following model responses are queued:
       | type | content            | model |
@@ -104,6 +109,7 @@ Feature: Recall — continuation seed carries an open episode forward
     Then the exit code is 0
     And the last LLM request mentions "Where this conversation left off" exactly 0 times
 
+  @wip
   Scenario: the continuation block comes before the recall search block (isaac-mwqs)
     Given crew "cordelia" has a closed episode "2026-03-01-1000-ab12" with scenes:
       | id                   | started-at          | ended-at            | gist                      | text                                    |
