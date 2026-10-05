@@ -108,6 +108,7 @@ Feature: Episodes — live (policy + lifecycle)
       | message | user         | #"(?s).*Set the watch rotation" |
       | message | assistant    | Watches dogged         |
 
+    @wip
     Scenario: a cold prompt starts the new episode with an empty transcript, recall only (isaac-1vx0)
     Field 2026-09-29 13:51Z (yopp ACP session a6c4, idle ~20h): the first
     message ran the compaction check against yesterday's gauge (930,470) on a
@@ -158,8 +159,10 @@ Feature: Episodes — live (policy + lifecycle)
       | key      | value                                               |
       | messages | #"(?s)Previously in this conversation"              |
       | messages | #"(?s)Reef passage charted.*Set the watch rotation" |
-    And the last LLM request mentions "Chart the reef passage" exactly 0 times
-    And the last LLM request mentions "Marked; keep to leeward." exactly 0 times
+    And the last LLM request matches:
+      | key      | value                                              |
+      | messages | #"(?s)Where this conversation left off.*Chart the reef passage" |
+      | messages | #"(?s)Marked; keep to leeward\."                  |
     And session "reef-chat" has chronicle matching:
       | type    | message.role | message.content        |
       | message | user         | Chart the reef passage |
@@ -497,7 +500,8 @@ Feature: Episodes — live (policy + lifecycle)
 
   # ----- Lineage seed (isaac-h5dk) -----
 
-    Scenario: cold continuation seeds parent gists by lineage, without duplication
+    @wip
+    Scenario: cold continuation seeds parent gists by lineage, and the last exchange too (isaac-mwqs)
     Given the isaac EDN file "config/crew/cordelia.edn" exists with:
       | path         | value            |
       | model        | echo             |
@@ -533,7 +537,7 @@ Feature: Episodes — live (policy + lifecycle)
       | key      | value                                                 |
       | messages | #"(?s)Previously in this conversation.*recall__scene" |
       | messages | #"(?s)\[\S+ · 2026-03-01\] Reef passage charted"      |
-    And the last LLM request mentions "Reef passage charted" exactly 1 time
+    And the last LLM request mentions "Reef passage charted" exactly 2 times
 
   # ----- Index at close (isaac-h5dk) -----
 
