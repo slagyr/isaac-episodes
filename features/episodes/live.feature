@@ -347,7 +347,6 @@ Feature: Episodes — live (policy + lifecycle)
       | \d{17}\s+open\s+reef-chat\s+0 scenes  |
     And the exit code is 0
 
-  @wip
     Scenario: episodes list shows a migrated episode's session id (isaac-8uno)
     A migrated episode.edn carries :session-id and no :thread; the list
     printed '-' for it. It falls back to :thread for older records.

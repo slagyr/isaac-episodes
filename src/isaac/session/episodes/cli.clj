@@ -134,7 +134,7 @@
   (let [n     (count (or (:scene-ids ep) []))
         scene (str n " scene" (when (not= 1 n) "s"))]
     (str (:id ep) "  " (name (or (:status ep) :unknown)) "  "
-         (or (:thread ep) "-") "  " scene)))
+         (or (:session-id ep) (:thread ep) "-") "  " scene)))
 
 (defn- run-list [opts crew]
   (try
