@@ -347,6 +347,22 @@ Feature: Episodes — live (policy + lifecycle)
       | \d{17}\s+open\s+reef-chat\s+0 scenes  |
     And the exit code is 0
 
+  @wip
+    Scenario: episodes list shows a migrated episode's session id (isaac-8uno)
+    A migrated episode.edn carries :session-id and no :thread; the list
+    printed '-' for it. It falls back to :thread for older records.
+    Given the isaac EDN file "sessions/cordelia/harbor-log/episodes/20260301100000000/episode.edn" exists with:
+      | path       | value             |
+      | id         | 20260301100000000 |
+      | status     | :closed           |
+      | crew       | cordelia          |
+      | session-id | harbor-log        |
+    When isaac is run with "episodes list --crew cordelia"
+    Then the stdout matches:
+      | pattern                              |
+      | 20260301100000000\s+closed\s+harbor-log |
+    And the exit code is 0
+
   # ----- Recall at open (isaac-h5dk) -----
 
     Scenario: recall-at-open injects matched memory into the opening prompt
