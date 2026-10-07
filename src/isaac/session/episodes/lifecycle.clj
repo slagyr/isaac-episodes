@@ -174,6 +174,7 @@
     (cond
       (nil? thread) (log/warn :episodes/open-without-session-id :episode id :crew crew)
       (nil? ss)     (log/warn :episodes/open-without-store :episode id :crew crew)
+      (session-store/get-session ss thread) nil
       :else         (session-ctx/create-with-resolved-behavior! thread create-opts))
     (when-let [summary (:summary seed-compaction)]
       (when (and ss thread)

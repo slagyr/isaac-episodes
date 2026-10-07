@@ -59,6 +59,17 @@
           (should= "reef-chat" (:id (session-store/get-session @ss "reef-chat")))
           (should-be-nil (session-store/get-session @ss (:id ep)))))))
 
+  (it "opens an episode for an existing session without recreating it"
+    (let [session (session-store/open-session! @ss "roving-sextant" {:crew "cordelia" :cwd @root})
+          ep      (with-redefs [isaac.agent.session.context/create-with-resolved-behavior!
+                               (fn [& _] (throw (ex-info "session already exists: roving-sextant" {})))]
+                    (sut/open-episode! {:fs @mem :root @root :crew "cordelia"
+                                        :thread "roving-sextant" :session-store @ss}))]
+      (should= :open (:status ep))
+      (should= "roving-sextant" (:session-id ep))
+      (should= ep (store/read-episode @mem @root "cordelia" (:id ep)))
+      (should= (:id session) (:id (session-store/get-session @ss "roving-sextant")))))
+
   (it "opens no backing session when the caller names none"
     (with-redefs [isaac.session.episodes.ids/chaos-suffix (constantly "ab13")]
       (binding [memory/*now* (java.time.Instant/parse "2026-03-01T10:05:00Z")]

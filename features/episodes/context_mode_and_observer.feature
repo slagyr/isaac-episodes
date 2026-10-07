@@ -132,7 +132,6 @@ Feature: Episodes runs as a context mode plus a session observer (isaac-ka10)
       | context mode :episodes requires observer :episodes; crew has none |
     And the exit code is 1
 
-  @wip
   Scenario: a new session's first turn opens its episode without a duplicate create
     Yopp, 2026-10-07: the episodes observer saw :session-opened after the turn
     had created the session, called create again, and failed with "session
