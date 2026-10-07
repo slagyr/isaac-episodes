@@ -131,3 +131,23 @@ Feature: Episodes runs as a context mode plus a session observer (isaac-ka10)
       | crew\.cordelia\.context-mode                                    |
       | context mode :episodes requires observer :episodes; crew has none |
     And the exit code is 1
+
+  @wip
+  Scenario: a new session's first turn opens its episode without a duplicate create
+    Yopp, 2026-10-07: the episodes observer saw :session-opened after the turn
+    had created the session, called create again, and failed with "session
+    already exists: roving-sextant". open-episode! leaves an existing session
+    alone and still writes the episode record.
+    Given the current time is "2026-03-01T10:00:00"
+    And the following model responses are queued:
+      | type | content            | model |
+      | text | Charted, keep west | echo  |
+    When isaac is run with "prompt -m 'Chart the reef passage' --session roving-sextant --crew cordelia"
+    Then the exit code is 0
+    And the log has no entries matching:
+      | event                   |
+      | :session/observer-error |
+    And an episode exists for crew "cordelia" matching:
+      | key        | value          |
+      | session-id | roving-sextant |
+      | status     | open           |
