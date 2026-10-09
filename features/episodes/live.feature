@@ -112,7 +112,7 @@ Feature: Episodes — live (policy + lifecycle)
       | message | assistant    | Watches dogged         |
 
     Scenario: a cold prompt starts the new episode with an empty transcript, recall only (isaac-1vx0)
-    Field 2026-09-29 13:51Z (yopp ACP session a6c4, idle ~20h): the first
+    Field 2026-09-29 13:51Z (an ACP session, idle ~20h): the first
     message ran the compaction check against yesterday's gauge (930,470) on a
     ~20k-token transcript, compacted for 5m48s, and only then opened the new
     episode. A cold session never compacts. It chains, and the new episode
